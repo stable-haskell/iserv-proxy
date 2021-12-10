@@ -5,7 +5,7 @@ import IServ.Remote.Message
 import IServ.Remote.Interpreter
 
 verbose :: Bool
-verbose = True
+verbose = False
 
 main :: IO ()
 main = do
