@@ -37,8 +37,9 @@ Description:
       > iserv $ arch-platform-target-cabal install -flibrary
   .
   * setup an application for your target that calls the
-    @startInterpreter@ function. This could be either Haskell or your
-    target's FFI-capable language, if needed.
+    @startInterpreter@ function. This could be either the included
+    @iserv-proxy-interpreter@ executable or, if necessary, an application in
+    your target's FFI-capable language:
   .
       >  void startInterpreter(
       >    false /* verbose */, 5000 /* port */,
@@ -94,3 +95,10 @@ Executable iserv-proxy
                   ghci       == 9.3,
                   libiserv   == 9.3,
                   iserv-proxy
+
+Executable iserv-proxy-interpreter
+   Default-Language: Haskell2010
+   Main-Is: Interpreter.hs
+   Build-Depends: base       >= 4   && < 5,
+                  iserv-proxy
+
