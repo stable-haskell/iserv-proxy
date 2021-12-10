@@ -63,8 +63,7 @@ startInterpreter' verbose base_path port = do
 
   let addrInfo = defaultHints {
           addrFamily = AF_INET,
-          addrSocketType = Stream,
-          addrProtocol = -1
+          addrSocketType = Stream
         }
   sock <- openSocket addrInfo
   setSocketOption sock ReuseAddr 1
