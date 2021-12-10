@@ -21,33 +21,36 @@ Description:
   -fproxy@ will yield the proxy.
   .
   Using the cabal for the target @arch-platform-target-cabal install
-  -flibrary@ will build the required library that contains the ffi
-  @startSlave@ function, which needs to be invoked on the target
-  (e.g. in an iOS application) to start the remote iserv slave.
+  -flibrary@ will build the required library that contains the FFI
+  @startInterpreter@ function, which needs to be invoked on the target
+  (e.g. in an iOS application) to start the remote iserv interpreter
   .
   calling the GHC cross compiler with @-fexternal-interpreter
   -pgmi=$HOME/.cabal/bin/iserv-proxy -opti\<ip address\> -opti\<port\>@
   will cause it to compile Template Haskell via the remote at \<ip address\>.
   .
   Thus to get cross compilation with Template Haskell follow the
-  following receipt:
+  following recipe:
   .
   * compile the iserv library for your target
   .
       > iserv $ arch-platform-target-cabal install -flibrary
   .
   * setup an application for your target that calls the
-  * startSlave function. This could be either haskell or your
-  * targets ffi capable language, if needed.
+    @startInterpreter@ function. This could be either Haskell or your
+    target's FFI-capable language, if needed.
   .
-      >  void startSlave(false /* verbose */, 5000 /* port */,
-      >                  "/path/to/storagelocation/on/target");
+      >  void startInterpreter(
+      >    false /* verbose */, 5000 /* port */,
+      >    "/path/to/storagelocation/on/target");
   .
-  * build the iserv-proxy
+  * build the @iserv-proxy@
   .
       > iserv $ cabal install -flibrary -fproxy
-  * Start your iserv-slave app on your target running on say @10.0.0.1:5000@
-  * compiler your sources with -fexternal-interpreter and the proxy
+  .
+  * Start your iserv interpreter app on your target running on, for instance,
+    @10.0.0.1:5000@. Compile your sources with @-fexternal-interpreter@ and the
+    proxy
   .
       > project $ arch-platform-target-ghc ModuleContainingTH.hs \
       >             -fexternal-interpreter \
@@ -66,7 +69,7 @@ Library
    Hs-Source-Dirs: src
    Exposed-Modules:
      IServ.Remote.Message,
-     IServ.Remote.Slave
+     IServ.Remote.Interpreter
    Build-Depends: array      >= 0.5 && < 0.6,
                   base       >= 4   && < 5,
                   binary     >= 0.7 && < 0.9,

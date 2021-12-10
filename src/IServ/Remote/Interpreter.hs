@@ -1,5 +1,5 @@
 {-# LANGUAGE ForeignFunctionInterface, GADTs, LambdaCase #-}
-module IServ.Remote.Slave where
+module IServ.Remote.Interpreter where
 
 import Network.Socket
 
@@ -41,23 +41,23 @@ dropLeadingPathSeparator p | isAbsolute p = joinPath (drop 1 (splitPath p))
 lhs <//> rhs = dropTrailingPathSeparator lhs </> dropLeadingPathSeparator rhs
 infixr 5 <//>
 
-foreign export ccall startSlave :: Bool -> Int -> CString -> IO ()
+foreign export ccall startInterpreter :: Bool -> Int -> CString -> IO ()
 
--- | @startSlave@ is the exported slave function, that the
--- hosting application on the target needs to invoce to
--- start the slave process, and runs iserv.
-startSlave :: Bool -> Int -> CString -> IO ()
-startSlave verbose port s = do
+-- | @startInterpreter@ is the exported interpreter function, that the
+-- hosting application on the target needs to invoke to
+-- start the interpreter process, and runs iserv.
+startInterpreter :: Bool -> Int -> CString -> IO ()
+startInterpreter verbose port s = do
   base_path <- peekCString s
   trace $ "DocRoot: " ++ base_path
-  _ <- forkIO $ startSlave' verbose base_path (toEnum port)
+  _ <- forkIO $ startInterpreter' verbose base_path (toEnum port)
   return ()
 
--- | @startSlave'@ provdes a blocking haskell interface, that
+-- | @startInterpreter'@ provdes a blocking haskell interface, that
 -- the hosting application on the target can use to start the
--- slave process.
-startSlave' :: Bool -> String -> PortNumber -> IO ()
-startSlave' verbose base_path port = do
+-- interpreter process.
+startInterpreter' :: Bool -> String -> PortNumber -> IO ()
+startInterpreter' verbose base_path port = do
   hSetBuffering stdin LineBuffering
   hSetBuffering stdout LineBuffering
 
@@ -85,9 +85,9 @@ startSlave' verbose base_path port = do
     return ()
 
 -- | The iserv library may need access to files, specifically
--- archives and object files to be linked. If ghc and the slave
+-- archives and object files to be linked. If ghc and the interpreter
 -- are on the same host, this is trivial, as the underlying
--- filestorage is the same.  If however the slave does not run
+-- filestorage is the same.  If, however, the interpreter does not run
 -- on the same host, the filestorage is not identical and we
 -- need to request data from the host where ghc runs on.
 --
@@ -112,9 +112,9 @@ handleLoad pipe path localPath = do
 
   proxyCall Done
   where
-    proxyCall :: (Binary a, Show a) => SlaveMessage a -> IO a
+    proxyCall :: (Binary a, Show a) => ProxyMessage a -> IO a
     proxyCall msg = do
-      writePipe pipe (putSlaveMessage msg)
+      writePipe pipe (putProxyMessage msg)
       readPipe pipe get
 
 -- | The hook we install in the @serv@ function from the

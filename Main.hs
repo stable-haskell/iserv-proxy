@@ -4,14 +4,14 @@
 This is the proxy portion of iserv.
 
 It acts as local bridge for GHC to call
-a remote slave. This all might sound
+a remote interpreter. This all might sound
 confusing, so let's try to get some
 naming down.
 
 GHC is the actual Haskell compiler, that
 acts as frontend to the code to be compiled.
 
-iserv is the slave, that GHC delegates compilation
+iserv is the interpreter, that GHC delegates compilation
 of TH to. As such it needs to be compiled for
 and run on the Target. In the special case
 where the Host and the Target are the same,
@@ -77,9 +77,9 @@ dieWithUsage = do
     die $ prog ++ ": " ++ msg
   where
 #if defined(WINDOWS)
-    msg = "usage: iserv <write-handle> <read-handle> <slave ip> <slave port> [-v]"
+    msg = "usage: iserv <write-handle> <read-handle> <interpreter ip> <interpreter port> [-v]"
 #else
-    msg = "usage: iserv <write-fd> <read-fd> <slave ip> <slave port> [-v]"
+    msg = "usage: iserv <write-fd> <read-fd> <interpreter ip> <interpreter port> [-v]"
 #endif
 
 main :: IO ()
@@ -126,18 +126,18 @@ main = do
     trace "Starting proxy"
   proxy verbose in_pipe out_pipe
 
--- | A hook, to transform outgoing (proxy -> slave)
--- messages prior to sending them to the slave.
+-- | A hook, to transform outgoing (proxy -> interpreter)
+-- messages prior to sending them to the interpreter.
 hook :: Msg -> IO Msg
 hook = return
 
--- | Forward a single @THMessage@ from the slave
+-- | Forward a single @THMessage@ from the interpreter
 -- to ghc, and read back the result from GHC.
 --
---  @Message@s go from ghc to the slave.
---    ghc --- proxy --> slave               (@Message@)
---  @THMessage@s go from the slave to ghc
---    ghc <-- proxy --- slave               (@THMessage@)
+--  @Message@s go from ghc to the interpreter.
+--    ghc --- proxy --> interpreter               (@Message@)
+--  @THMessage@s go from the interpreter to ghc
+--    ghc <-- proxy --- interpreter               (@THMessage@)
 --
 fwdTHMsg :: (Binary a) => Pipe -> THMessage a -> IO a
 fwdTHMsg local msg = do
@@ -161,24 +161,24 @@ fwdTHCall verbose local remote msg = do
           trace "fwdTHCall/loopTH: reading remote pipe..."
         THMsg msg' <- readPipe remote getTHMessage
         when verbose $
-          trace ("| TH Msg: ghc <- proxy -- slave: " ++ show msg')
+          trace ("| TH Msg: ghc <- proxy -- interpreter: " ++ show msg')
         res <- fwdTHMsg local msg'
         when verbose $
-          trace ("| Resp.:  ghc -- proxy -> slave: " ++ show res)
+          trace ("| Resp.:  ghc -- proxy -> interpreter: " ++ show res)
         writePipe remote (put res)
         case msg' of
           RunTHDone -> return ()
           _         -> loopTH
 
--- | Forwards a @Message@ call, and handle @SlaveMessage@.
--- Similar to @THMessages@, but @SlaveMessage@ are between
--- the slave and the proxy, and are not forwarded to ghc.
--- These message allow the Slave to query the proxy for
+-- | Forwards a @Message@ call, and handle @ProxyMessage@.
+-- Similar to @THMessages@, but @ProxyMessage@ are between
+-- the interpreter and the proxy, and are not forwarded to ghc.
+-- These message allow the interpreter to query the proxy for
 -- files.
 --
---  ghc --- proxy --> slave  (@Message@)
+--  ghc --- proxy --> interpreter  (@Message@)
 --
---          proxy <-- slave  (@SlaveMessage@)
+--          proxy <-- interpreter  (@ProxyMessage@)
 --
 fwdLoadCall :: (Binary a, Show a) => Bool -> Pipe -> Pipe -> Message a -> IO a
 fwdLoadCall verbose _ remote msg = do
@@ -194,15 +194,15 @@ fwdLoadCall verbose _ remote msg = do
     reply :: (Binary a, Show a) => a -> IO ()
     reply m = do
       when verbose $
-        trace ("| Resp.:         proxy -> slave: "
+        trace ("| Resp.:         proxy -> interpreter: "
                   ++ truncateMsg 80 (show m))
       writePipe remote (put m)
     loopLoad :: IO ()
     loopLoad = do
       when verbose $ trace "fwdLoadCall: reading remote pipe"
-      SlaveMsg msg' <- readPipe remote getSlaveMessage
+      SomeProxyMessage msg' <- readPipe remote getProxyMessage
       when verbose $
-        trace ("| Sl Msg:        proxy <- slave: " ++ show msg')
+        trace ("| Sl Msg:        proxy <- interpreter: " ++ show msg')
       case msg' of
         Done -> return ()
         Missing path -> do
@@ -233,18 +233,18 @@ proxy verbose local remote = loop
     reply :: (Show a, Binary a) => a -> IO ()
     reply msg = do
       when verbose $
-        trace ("Resp.:    ghc <- proxy -- slave: " ++ show msg)
+        trace ("Resp.:    ghc <- proxy -- interpreter: " ++ show msg)
       writePipe local (put msg)
 
     loop = do
       (Msg msg) <- readPipe local getMessage
       when verbose $
-        trace ("Msg:      ghc -- proxy -> slave: " ++ show msg)
+        trace ("Msg:      ghc -- proxy -> interpreter: " ++ show msg)
       (Msg msg') <- hook (Msg msg)
       -- Note [proxy-communication]
       --
       -- The fwdTHCall/fwdLoadCall/fwdCall's have to match up
-      -- with their endpoints in libiserv:IServ.Remote.Slave otherwise
+      -- with their endpoints in libiserv:IServ.Remote.Interpreter otherwise
       -- you will end up with hung connections.
       --
       -- We are intercepting some calls between ghc and iserv
