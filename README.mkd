@@ -1,0 +1,8 @@
+# iserv-proxy
+
+This is a small shim for running GHC `iserv` interpreters across a network.
+See the Cabal file for full documentation.
+
+## Usage
+
+See `local-example.sh` for a sense of how to use this.
