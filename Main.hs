@@ -141,8 +141,16 @@ hook = return
 --
 fwdTHMsg :: (Binary a) => Pipe -> THMessage a -> IO a
 fwdTHMsg local msg = do
-  writePipe local (putTHMessage msg)
-  readPipe local get
+    writePipe local (putTHMessage (fixAddDep msg))
+    readPipe local get
+  where
+    fixAddDep (AddDependentFile fp) = AddDependentFile $ fixZ (map fixSlash fp)
+    fixAddDep m = m
+    fixZ ('Z':':':rest) = rest
+    fixZ ('/':'/':'?':'/':'Z':':':rest) = rest
+    fixZ fp = fp
+    fixSlash '\\' = '/'
+    fixSlash c = c
 
 -- | Fowarard a @Message@ call and handle @THMessages@.
 fwdTHCall :: (Binary a) => Bool -> Pipe -> Pipe -> Message a -> IO a

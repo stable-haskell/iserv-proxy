@@ -139,6 +139,9 @@ hook verbose base_path pipe m = case m of
   -- system libraries.
   Msg (LoadDLL path@('C':':':_)) -> do
     return m
+  -- When building on nix the /nix/store paths use Z:
+  Msg (LoadDLL path@('Z':':':_)) -> do
+    return m
   Msg (LoadDLL path) | isAbsolute path -> do
     when verbose $ trace ("Need DLL: " ++ (base_path <//> path))
     handleLoad pipe path (base_path <//> path)
