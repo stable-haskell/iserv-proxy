@@ -1,9 +1,13 @@
-{-# LANGUAGE ForeignFunctionInterface, GADTs, LambdaCase #-}
+{-# LANGUAGE CPP, ForeignFunctionInterface, GADTs, LambdaCase #-}
 module IServ.Remote.Interpreter where
 
 import Network.Socket
 
+#if MIN_VERSION_ghci(9,4,1)
 import IServ (serv)
+#else
+import Lib (serv)
+#endif
 import IServ.Remote.Message
 
 import System.IO
