@@ -3,7 +3,9 @@ module IServ.Remote.Interpreter where
 
 import Network.Socket
 
-#if MIN_VERSION_ghci(9,4,1)
+#if MIN_VERSION_ghci(9,8,1)
+import GHCi.Server (serv)
+#elif MIN_VERSION_ghci(9,4,1)
 import IServ (serv)
 #else
 import Lib (serv)
