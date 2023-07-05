@@ -80,8 +80,9 @@ Library
                   directory  >= 1.3 && < 1.4,
                   network    >= 2.6,
                   filepath   >= 1.4 && < 1.5,
-                  ghci       == 9.3,
-                  libiserv   == 9.3
+                  ghci
+  if impl(ghc < 9.8)
+    Build-Depends: libiserv
 
 Executable iserv-proxy
    Default-Language: Haskell2010
@@ -92,9 +93,10 @@ Executable iserv-proxy
                   directory  >= 1.3 && < 1.4,
                   network    >= 2.6,
                   filepath   >= 1.4 && < 1.5,
-                  ghci       == 9.3,
-                  libiserv   == 9.3,
+                  ghci,
                   iserv-proxy
+  if impl(ghc < 9.8)
+    Build-Depends: libiserv
 
 Executable iserv-proxy-interpreter
    Default-Language: Haskell2010
