@@ -64,6 +64,8 @@ Description:
 Category: Development
 build-type: Simple
 cabal-version: >=1.10
+-- these aren't really headers. They are more like includable files.
+extra-source-files: cbits/symbols.aarch64-musl.h
 
 Library
    Default-Language: Haskell2010
@@ -104,7 +106,6 @@ Executable iserv-proxy-interpreter
    -- We need to pass -fkeep-cafs to ensure that the interpreter retains CAFs
    -- Iserv and GHC do something similar.
    ghc-options: -fkeep-cafs
-   includes: cbits/symbols.aarch64-musl.h
    c-sources: cbits/symbols.aarch64-musl.c
    Build-Depends: base       >= 4   && < 5,
                   iserv-proxy
