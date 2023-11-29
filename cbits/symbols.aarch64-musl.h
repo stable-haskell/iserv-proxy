@@ -1,1 +1,2 @@
 SYM(fprintf)
+SYM(ptsname)
