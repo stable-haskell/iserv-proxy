@@ -1,0 +1,5 @@
+SYM(fprintf)
+SYM(snprintf)
+SYM(vsnprintf)
+SYM(ptsname)
+SYM(closure_sizeW_)

@@ -1,9 +1,15 @@
-{-# LANGUAGE ForeignFunctionInterface, GADTs, LambdaCase #-}
+{-# LANGUAGE CPP, ForeignFunctionInterface, GADTs, LambdaCase #-}
 module IServ.Remote.Interpreter where
 
 import Network.Socket
 
+#if MIN_VERSION_ghci(9,8,0)
+import GHCi.Server (serv)
+#elif MIN_VERSION_ghci(9,4,1)
 import IServ (serv)
+#else
+import Lib (serv)
+#endif
 import IServ.Remote.Message
 
 import System.IO
@@ -138,6 +144,9 @@ hook verbose base_path pipe m = case m of
   -- want to copy libraries that are referenced in C:\ these are usually
   -- system libraries.
   Msg (LoadDLL path@('C':':':_)) -> do
+    return m
+  -- When building on nix the /nix/store paths use Z:
+  Msg (LoadDLL path@('Z':':':_)) -> do
     return m
   Msg (LoadDLL path) | isAbsolute path -> do
     when verbose $ trace ("Need DLL: " ++ (base_path <//> path))
