@@ -1,14 +1,30 @@
 module Main where
 
-import System.Environment
-import IServ.Remote.Message
-import IServ.Remote.Interpreter
-
-verbose :: Bool
-verbose = False
+import           IServ.Remote.Interpreter (startInterpreter')
+import           System.Environment (getArgs, getProgName)
+import           System.Exit (die)
 
 main :: IO ()
-main = do
-    [portStr, storagePath] <- getArgs
-    let port = read portStr
-    startInterpreter' verbose storagePath port
+main = getArgs >>= startSlave
+
+dieWithUsage :: IO a
+dieWithUsage = do
+  prog <- getProgName
+  die $ msg prog
+ where
+  msg name = "usage: " ++ name ++ " /path/to/storage PORT [-v]"
+
+startSlave :: [String] -> IO ()
+startSlave args0
+  | "--help" `elem` args0 = dieWithUsage
+  | otherwise = do
+      (path, port, rest) <- case args0 of
+        arg0:arg1:rest -> return (arg0, read arg1, rest)
+        _              -> dieWithUsage
+
+      verbose <- case rest of
+        ["-v"] -> return True
+        []     -> return False
+        _      -> dieWithUsage
+
+      startInterpreter' verbose path port
