@@ -56,14 +56,14 @@ startInterpreter :: Bool -> Int -> CString -> IO ()
 startInterpreter verbose port s = do
   base_path <- peekCString s
   trace $ "DocRoot: " ++ base_path
-  _ <- forkIO $ startInterpreter' verbose base_path (toEnum port)
+  _ <- forkIO $ startInterpreter' verbose True base_path (toEnum port)
   return ()
 
 -- | @startInterpreter'@ provdes a blocking haskell interface, that
 -- the hosting application on the target can use to start the
 -- interpreter process.
-startInterpreter' :: Bool -> String -> PortNumber -> IO ()
-startInterpreter' verbose base_path port = do
+startInterpreter' :: Bool -> Bool -> String -> PortNumber -> IO ()
+startInterpreter' verbose noLoadCall base_path port = do
   hSetBuffering stdin LineBuffering
   hSetBuffering stdout LineBuffering
 
@@ -85,7 +85,7 @@ startInterpreter' verbose base_path port = do
     when verbose $ trace "Opening socket"
     pipe <- acceptSocket sock >>= socketToPipe
     when verbose $ trace "Starting serv"
-    uninterruptibleMask $ serv verbose (hook verbose base_path pipe) pipe
+    uninterruptibleMask $ serv verbose (hook verbose noLoadCall base_path pipe) pipe
     when verbose $ trace "serv ended"
     return ()
 
@@ -124,8 +124,8 @@ handleLoad pipe path localPath = do
 
 -- | The hook we install in the @serv@ function from the
 -- iserv library, to request archives over the wire.
-hook :: Bool -> String -> Pipe -> Msg -> IO Msg
-hook verbose base_path pipe m = case m of
+hook :: Bool -> Bool -> String -> Pipe -> Msg -> IO Msg
+hook verbose noLoadCall base_path pipe m = case m of
   Msg (AddLibrarySearchPath p) -> do
     when verbose $ putStrLn ("Need Path: " ++ (base_path <//> p))
     createDirectoryIfMissing True (base_path <//> p)
@@ -148,7 +148,7 @@ hook verbose base_path pipe m = case m of
   -- When building on nix the /nix/store paths use Z:
   Msg (LoadDLL path@('Z':':':_)) -> do
     return m
-  Msg (LoadDLL path) | isAbsolute path -> do
+  Msg (LoadDLL path) | isAbsolute path && not noLoadCall -> do
     when verbose $ trace ("Need DLL: " ++ (base_path <//> path))
     handleLoad pipe path (base_path <//> path)
     return $ Msg (LoadDLL (base_path <//> path))

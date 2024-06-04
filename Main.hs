@@ -98,10 +98,11 @@ main = do
             return (wfd1, rfd2, ip, port, rest)
         _ -> dieWithUsage
 
-  verbose <- case rest of
-    ["-v"] -> return True
-    []     -> return False
-    _      -> dieWithUsage
+  let verbose = "-v" `elem` rest
+      noLoadCall = "--no-load-call" `elem` rest
+
+  when (any (not . (`elem` ["-v", "--no-load-call"])) rest)
+    dieWithUsage
 
   when verbose $
     printf "GHC iserv starting (in: %d; out: %d)\n"
@@ -124,7 +125,7 @@ main = do
 
   when verbose $
     trace "Starting proxy"
-  proxy verbose in_pipe out_pipe
+  proxy verbose noLoadCall in_pipe out_pipe
 
 -- | A hook, to transform outgoing (proxy -> interpreter)
 -- messages prior to sending them to the interpreter.
@@ -207,7 +208,7 @@ fwdLoadCall verbose _ remote msg = do
       writePipe remote (put m)
     loopLoad :: IO ()
     loopLoad = do
-      when verbose $ trace "fwdLoadCall: reading remote pipe"
+      when verbose $ trace "fwdLoadCall: X reading remote pipe"
       SomeProxyMessage msg' <- readPipe remote getProxyMessage
       when verbose $
         trace ("| Sl Msg:        proxy <- interpreter: " ++ show msg')
@@ -227,8 +228,8 @@ fwdLoadCall verbose _ remote msg = do
 
 -- | The actual proxy. Conntect local and remote pipe,
 -- and does some message handling.
-proxy :: Bool -> Pipe -> Pipe -> IO ()
-proxy verbose local remote = loop
+proxy :: Bool -> Bool -> Pipe -> Pipe -> IO ()
+proxy verbose noLoadCall local remote = loop
   where
     fwdCall :: (Binary a, Show a) => Message a -> IO a
     fwdCall msg = do
@@ -283,7 +284,7 @@ proxy verbose local remote = loop
         -- that are referenced in C:\ these are usually system libraries.
         LoadDLL path@('C':':':_) -> do
           fwdCall msg' >>= reply >> loop
-        LoadDLL path | isAbsolute path -> do
+        LoadDLL path | isAbsolute path && not noLoadCall -> do
           resp <- fwdLoadCall verbose local remote msg'
           reply resp
           loop
