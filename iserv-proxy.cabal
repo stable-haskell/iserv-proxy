@@ -114,6 +114,8 @@ Executable iserv-proxy-interpreter
        c-sources: cbits/symbols.aarch64-musl.c
      if arch(x86_64)
        c-sources: cbits/symbols.x86_64-musl.c
+     if arch(i386)
+       c-sources: cbits/symbols.i386-musl.c
 
    if os(android)
      if arch(aarch64)
