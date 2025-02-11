@@ -1,3 +1,4 @@
+#ifdef __ANDROID__
 #define BIONIC_IOCTL_NO_SIGNEDNESS_OVERLOAD
 #include <stddef.h>
 #include <stdio.h>
@@ -325,3 +326,4 @@ RtsSymbolVal my_iserv_syms[] = {
 RtsSymbolVal* iserv_syms() {
     return my_iserv_syms;
 }
+#endif

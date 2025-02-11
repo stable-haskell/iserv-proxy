@@ -1,3 +1,4 @@
+#ifdef __ANDROID__
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
@@ -454,3 +455,4 @@ RtsSymbolVal my_iserv_syms[] = {
 RtsSymbolVal* iserv_syms() {
     return my_iserv_syms;
 }
+#endif

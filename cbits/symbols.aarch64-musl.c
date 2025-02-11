@@ -1,3 +1,4 @@
+#ifndef __ANDROID__
 #define SYM(s) extern void s(void);
 #include "symbols.aarch64-musl.h"
 #undef SYM
@@ -48,3 +49,4 @@ RtsSymbolVal my_iserv_syms[] = {
 RtsSymbolVal* iserv_syms() {
     return my_iserv_syms;
 }
+#endif

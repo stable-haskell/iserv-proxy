@@ -109,17 +109,15 @@ Executable iserv-proxy-interpreter
 
    -- no idea how to check for musl :-/
    -- we only build a linux iserv-proxy for musl builds
-   if os(linux)
+   -- also os(android) is not working (so using `#ifdef __ANDROID__` in the .c files)
+   if os(linux) || os(android)
      if arch(aarch64)
        c-sources: cbits/symbols.aarch64-musl.c
+       c-sources: cbits/symbols.aarch64-android.c
      if arch(x86_64)
        c-sources: cbits/symbols.x86_64-musl.c
      if arch(i386)
        c-sources: cbits/symbols.i386-musl.c
-
-   if os(android)
-     if arch(aarch64)
-       c-sources: cbits/symbols.aarch64-android.c
      if arch(arm)
        c-sources: cbits/symbols.armv7a-android.c
 
