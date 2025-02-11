@@ -32,22 +32,12 @@
 #include <sys/uio.h>
 
 // fnctl stubs, see above
-extern void open(void);
-extern void openat(void);
-extern void creat(void);
 extern void eventfd(void);
 extern void eventfd_write(void);
 
-extern void futimes(void);
-extern void lutimes(void);
 extern void statx(void);
 
 extern void __stack_chk_fail(void);
-extern void __vsprintf_chk(void);
-extern void __open_2(void);
-extern void __memcpy_chk(void);
-extern void __memset_chk(void);
-extern void __memmove_chk(void);
 // GCC stuff
 extern void __addtf3(void);
 extern void __divtf3(void);
@@ -61,6 +51,9 @@ extern void __lttf2(void);
 extern void __multf3(void);
 extern void __subtf3(void);
 extern void __trunctfdf2(void);
+
+extern void __aio_close(void);
+extern void __stack_chk_fail_local(void);
 
 #define MISSING_FUN(f) void (f)(void) { printf("Unknown call to `%s'\n", #f); exit(1); }
 
@@ -110,14 +103,11 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(getauxval),
     // sys/mman.h
     SYM(madvise),SYM(mlock),SYM(mmap),SYM(mprotect),SYM(munmap),
-    SYM(mremap),
     SYM(munlock),
-    // select.h
-    SYM(__FD_SET_chk),
     // sys/socket
     SYM(accept),SYM(bind),SYM(connect),SYM(getsockopt),SYM(listen),
     SYM(setsockopt),SYM(socket),SYM(getsockname),SYM(select),
-    SYM(getpeername),SYM(__cmsg_nxthdr),SYM(recv),SYM(recvfrom),
+    SYM(getpeername),SYM(recv),SYM(recvfrom),
     SYM(recvmsg),SYM(send),SYM(sendmsg),SYM(sendto),SYM(writev),
     SYM(accept4),
     // pthread.h
@@ -129,8 +119,6 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(pthread_mutex_init),SYM(pthread_mutex_lock),SYM(pthread_mutex_trylock),
     SYM(pthread_mutex_unlock),SYM(pthread_mutexattr_destroy),
     SYM(pthread_mutexattr_init),SYM(pthread_mutexattr_settype),
-    // chk.h
-    SYM(__read_chk),SYM(__write_chk),
     // netdb.h
     SYM(freeaddrinfo),SYM(gai_strerror),SYM(getaddrinfo),SYM(getnameinfo),
     SYM(gethostbyname),
@@ -150,7 +138,7 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(fchdir),
     SYM(fdopendir),
     SYM(rewinddir),
-    SYM(futimens),SYM(futimes),SYM(lutimes),
+    SYM(futimens),
     SYM(mknod),
     SYM(lchown),
     SYM(symlink),
@@ -164,13 +152,11 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(clearenv),
     SYM(chdir),
     SYM(sleep),
-    SYM(stdout),
     SYM(strftime),
     SYM(utimes),
     SYM(setenv),
     SYM(fpathconf),
     SYM(exit),
-    SYM(environ),
     SYM(ftruncate),
     SYM(getenv),
     SYM(putenv),
@@ -183,8 +169,6 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(unlink),
     SYM(execv),SYM(execve),SYM(execvp),SYM(execvpe),
     SYM(syscall),SYM(sysconf),
-    // errno.h
-    SYM(__errno),
     // math.h
     SYM(sinhf), SYM(sinh), SYM(sinf), SYM(sin),
     SYM(coshf), SYM(cosh), SYM(cosf), SYM(cos),
@@ -194,12 +178,9 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(log1pf), SYM(log1p), SYM(logf), SYM(log),
     SYM(expm1f), SYM(expm1),
     SYM(expf), SYM(exp),
-    SYM(ldexp),
     SYM(powf), SYM(pow),
     SYM(sqrtf), SYM(sqrt),
     SYM(tanhf), SYM(tanh), SYM(tanf), SYM(tan),
-    // assert.h
-    SYM(__assert2),
     // signal.h
     SYM(signal),SYM(sigaction),
     SYM(raise), SYM(sigaddset), SYM(sigemptyset), SYM(sigprocmask),
@@ -220,15 +201,13 @@ RtsSymbolVal my_iserv_syms[] = {
     // poll.h
     SYM(poll),
     // fcntl.h
-    SYM(open), SYM(creat), SYM(fcntl), SYM(ioctl),
-    SYM(openat),SYM(__open_2),
+    SYM(fcntl),
     // string.h
     SYM(strerror),
     SYM(strcmp),
     SYM(memchr),SYM(strcpy),SYM(strchr),SYM(strncpy),SYM(strrchr),
     SYM(strcat),SYM(strncmp),SYM(strdup),
     SYM(strtoul),SYM(strspn),SYM(strtol),SYM(strstr),SYM(strcspn),
-    SYM(__strncpy_chk2),SYM(__memcpy_chk),
     // ctype.h
     SYM(__ctype_get_mb_cur_max),
     // wchar.h
@@ -242,17 +221,11 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(utime),SYM(time),
     // ...
     SYM(fileno),
-    SYM(__vsprintf_chk),
-    SYM(__strlen_chk),
-    SYM(__strchr_chk),
-    SYM(__memset_chk),
-    SYM(__memmove_chk),
     SYM(__stack_chk_fail),
     SYM(memmove),
     SYM(memcmp),
     SYM(memcpy),
     SYM(memset),
-    SYM(stderr),
     SYM(realloc),
     SYM(calloc),
     SYM(malloc),
@@ -281,7 +254,6 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(sscanf),
     SYM(shutdown),
     SYM(atoi),
-    SYM(stdin),
     SYM(atexit),
     SYM(usleep),
     SYM(fchmod),
@@ -290,7 +262,6 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(getcwd),
     SYM(geteuid),
     SYM(localtime),
-    SYM(lseek64),
     SYM(mkdir),
     SYM(mktime),
     SYM(fdopen),
@@ -310,6 +281,12 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(__multf3),
     SYM(__subtf3),
     SYM(__trunctfdf2),
+    SYM(scalbn),
+    SYM(fma),
+    SYM(fmaf),
+    SYM(puts),
+    SYM(__aio_close),
+    SYM(__stack_chk_fail_local),
     { 0, 0, STRENGTH_NORMAL, 1 } /* sentinel */
 };
 
