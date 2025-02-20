@@ -1,4 +1,4 @@
-#ifdef __ANDROID__
+#if defined(__ANDROID__) && defined(__arm__)
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
@@ -449,6 +449,7 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(flock),
     SYM(puts),
     SYM(getrusage),
+    SYM(__aeabi_memclr8),
     { 0, 0, STRENGTH_NORMAL, 1 } /* sentinel */
 };
 

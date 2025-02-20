@@ -118,8 +118,7 @@ Executable iserv-proxy-interpreter
        c-sources: cbits/symbols.x86_64-musl.c
      if arch(i386)
        c-sources: cbits/symbols.i386-musl.c
-     if arch(arm)
-       c-sources: cbits/symbols.armv7a-android.c
+     c-sources: cbits/symbols.armv7a-android.c
 
    Build-Depends: base       >= 4   && < 5,
                   iserv-proxy
