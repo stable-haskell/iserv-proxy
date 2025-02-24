@@ -32,6 +32,7 @@
 #include <grp.h>
 #include <pwd.h>
 #include <sys/uio.h>
+#include <termios.h>
 
 // fnctl stubs, see above
 extern void open(void);
@@ -320,6 +321,8 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(__subtf3),
     SYM(__trunctfdf2),
     SYM(getrusage),
+    SYM(tcsetattr),
+    SYM(tcgetattr),
     { 0, 0, STRENGTH_NORMAL, 1 } /* sentinel */
 };
 
