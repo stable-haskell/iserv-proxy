@@ -68,12 +68,56 @@ extern void __trunctfdf2(void);
 extern void flock(void);
 extern void times(void);
 
+extern void uname(void);
+extern void sem_post(void);
+extern void __gnu_strerror_r(void);
+extern void async_safe_format_buffer(void);
+extern void sem_trywait(void);
+extern void sem_wait(void);
+extern void sem_unlink(void);
+extern void sem_close(void);
+extern void sem_open(void);
+extern void sem_getvalue(void);
+extern void dlclose(void);
+extern void dlerror(void);
+extern void dlsym(void);
+extern void dlopen(void);
+extern void fallocate(void);
+extern void posix_fallocate(void);
+extern void __fadvise64(void);
+extern void posix_fadvise(void);
+extern void async_safe_fatal_no_abort(void);
+extern void __vsnprintf_chk(void);
+extern void openpty(void);
+extern void __getpriority(void);
+extern void * _Unwind_Resume;
+extern void __emutls_get_address(void);
+//extern void __sF(void);
+extern void __sflush(void);
+extern void __eqtf2(void);
+extern void __ldtoa(void);
+extern void __vfprintf(void);
+//extern void _Unwind_SetGR(void);
+//extern void _Unwind_SetIP(void);
+//extern void _Unwind_GetLanguageSpecificData(void);
+//extern void _Unwind_GetIP(void);
+//extern void _Unwind_GetRegionStart(void);
+void * __gxx_personality_v0;
+
 #define MISSING_FUN(f) void (f)(void) { printf("Unknown call to `%s'\n", #f); exit(1); }
 
 MISSING_FUN(c_format_unix_time)
 MISSING_FUN(c_format_unix_time_gmt)
 MISSING_FUN(c_parse_unix_time)
 MISSING_FUN(c_parse_unix_time_gmt)
+MISSING_FUN(abort_message)
+//MISSING_FUN(__cxa_unexpected_handler)
+MISSING_FUN(__cxa_begin_catch)
+MISSING_FUN(_ZSt9terminatev)
+//MISSING_FUN(_ZN10__cxxabiv130__aligned_malloc_with_fallbackEm)
+//MISSING_FUN(_ZN10__cxxabiv119__getExceptionClassEPK17_Unwind_Exception)
+//MISSING_FUN(_ZSt11__terminatePFvvE)
+// MISSINF_FUN(__gxx_personality_v0)
 
 typedef void SymbolAddr;
 typedef char SymbolName;
@@ -323,6 +367,98 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(getrusage),
     SYM(tcsetattr),
     SYM(tcgetattr),
+    SYM(setrlimit),
+    SYM(getrlimit),
+    SYM(uname),
+    SYM(fdatasync),
+    SYM(nanosleep),
+    SYM(kill),
+    SYM(killpg),
+    SYM(sigpending),
+    SYM(sigsuspend),
+    SYM(setitimer),
+    SYM(alarm),
+    SYM(sigismember),
+    SYM(sigfillset),
+    SYM(sigdelset),
+    SYM(__gnu_strerror_r),
+    SYM(async_safe_format_buffer),
+    SYM(android_get_application_target_sdk_version),
+    SYM(sem_post),
+    SYM(sem_trywait),
+    SYM(sem_wait),
+    SYM(sem_unlink),
+    SYM(sem_close),
+    SYM(sem_open),
+    SYM(sem_getvalue),
+    SYM(dlclose),
+    SYM(dlerror),
+    SYM(dlsym),
+    SYM(dlopen),
+    SYM(fallocate),
+    SYM(posix_fallocate),
+    SYM(__fadvise64),
+    SYM(posix_fadvise),
+    SYM(async_safe_fatal_no_abort),
+    SYM(arc4random_buf),
+    SYM(mkdtemp),
+    SYM(mkstemps),
+    SYM(mkstemp),
+    SYM(__vsnprintf_chk),
+    SYM(ttyname),
+    SYM(openpty),
+    SYM(ptsname),
+    SYM(ctermid),
+    SYM(getppid),
+    SYM(getpgid),
+    SYM(getpgrp),
+    SYM(setsid),
+    SYM(setpgid),
+    SYM(setpriority),
+    SYM(__getpriority),
+    SYM(getpriority),
+    SYM(tcgetpgrp),
+    SYM(tcsetpgrp),
+    SYM(tcflow),
+    SYM(tcflush),
+    SYM(tcdrain),
+    SYM(tcsendbreak),
+    SYM(cfsetospeed),
+    SYM(cfgetospeed),
+    SYM(cfsetispeed),
+    SYM(cfgetispeed),
+    SYM(_Unwind_Resume),
+//    SYM(posix_memalign),
+    SYM(__emutls_get_address),
+//    SYM(__sF),
+    SYM(__sflush),
+    SYM(__eqtf2),
+    SYM(__ldtoa),
+    SYM(__vfprintf),
+    SYM(vasprintf),
+    SYM(abort_message),
+//    SYM(__cxa_unexpected_handler),
+    SYM(_ZSt9terminatev),
+//    SYM(_ZN10__cxxabiv130__aligned_malloc_with_fallbackEm),
+    SYM(__cxa_begin_catch),
+//    SYM(_Unwind_SetGR),
+//    SYM(_Unwind_SetIP),
+//    SYM(_Unwind_GetLanguageSpecificData),
+//    SYM(_Unwind_GetIP),
+//    SYM(_Unwind_GetRegionStart),
+//    SYM(_ZN10__cxxabiv119__getExceptionClassEPK17_Unwind_Exception),
+//    SYM(_ZSt11__terminatePFvvE),
+    SYM(__gxx_personality_v0),
+    SYM(__fwrite_chk),
+    SYM(timezone),
+    SYM(sendmsg),
+    SYM(sendmmsg),
+    SYM(recvmmsg),
+    SYM(__strrchr_chk),
+//    SYM(__loader_add_thread_local_dtor),
+//    SYM(__cxa_thread_finalize),
+    SYM(pthread_exit),
+    SYM(__poll_chk),
     { 0, 0, STRENGTH_NORMAL, 1 } /* sentinel */
 };
 
