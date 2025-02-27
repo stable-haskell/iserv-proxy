@@ -103,6 +103,8 @@ extern void __vfprintf(void);
 //extern void _Unwind_GetIP(void);
 //extern void _Unwind_GetRegionStart(void);
 void * __gxx_personality_v0;
+extern void __cxa_guard_acquire(void);
+extern void __cxa_guard_release(void);
 
 #define MISSING_FUN(f) void (f)(void) { printf("Unknown call to `%s'\n", #f); exit(1); }
 
@@ -459,6 +461,9 @@ RtsSymbolVal my_iserv_syms[] = {
 //    SYM(__cxa_thread_finalize),
     SYM(pthread_exit),
     SYM(__poll_chk),
+    SYM(pthread_cond_wait),
+    SYM(__cxa_guard_acquire),
+    SYM(__cxa_guard_release),
     { 0, 0, STRENGTH_NORMAL, 1 } /* sentinel */
 };
 
