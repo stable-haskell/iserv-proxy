@@ -464,6 +464,14 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(pthread_cond_wait),
     SYM(__cxa_guard_acquire),
     SYM(__cxa_guard_release),
+    SYM(pthread_cond_signal),
+    SYM(pthread_cond_broadcast),
+    SYM(pthread_cond_init),
+    SYM(pthread_cond_timedwait),
+    SYM(pthread_cond_destroy),
+    SYM(pthread_attr_init),
+    SYM(pthread_attr_setdetachstate),
+    SYM(pthread_attr_destroy),
     { 0, 0, STRENGTH_NORMAL, 1 } /* sentinel */
 };
 
