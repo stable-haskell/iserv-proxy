@@ -18,6 +18,22 @@ extern void __aeabi_memset4(void);
 extern void __aeabi_uidiv(void);
 extern void __aeabi_uidivmod(void);
 extern void __aeabi_uldivmod(void);
+extern void __aeabi_d2f(void);
+extern void __aeabi_d2iz(void);
+extern void __aeabi_dadd(void);
+extern void __aeabi_dcmpeq(void);
+extern void __aeabi_dcmpge(void);
+extern void __aeabi_dcmpgt(void);
+extern void __aeabi_dcmple(void);
+extern void __aeabi_dcmplt(void);
+extern void __aeabi_ddiv(void);
+extern void __aeabi_dmul(void);
+extern void __aeabi_f2d(void);
+extern void __aeabi_fcmpeq(void);
+extern void __aeabi_fcmpge(void);
+extern void __aeabi_fcmpgt(void);
+extern void __aeabi_fcmple(void);
+extern void __aeabi_i2d(void);
 
 extern void eventfd_write(void);
 extern void ioctl(void);
@@ -74,6 +90,7 @@ extern void tzset(void);
 extern void sysconf(void);
 extern void socket(void);
 extern void readdir(void);
+extern void readdir_r(void);
 extern void pthread_rwlock_init(void);
 extern void __memset_chk(void);
 extern void __memcpy_chk(void);
@@ -165,6 +182,32 @@ extern void readlink(void);
 extern void flock(void);
 extern void times(void);
 extern void getrusage(void);
+extern void openat(void);
+extern void futimes(void);
+extern void lutimes(void);
+extern void dlclose(void);
+extern void dlerror(void);
+extern void dlsym(void);
+extern void dlopen(void);
+extern void execv(void);
+extern void execve(void);
+extern void execvp(void);
+extern void execvpe(void);
+extern void setrlimit(void);
+extern void sigpending(void);
+extern void getrlimit(void);
+extern void fallocate(void);
+extern void rewinddir(void);
+extern void seekdir(void);
+extern void telldir(void);
+void * __gxx_personality_v0;
+void * _Unwind_Resume;
+extern void __atomic_load_4(void);
+extern void __atomic_store_4(void);
+extern void pthread_cond_wait(void);
+extern void pthread_cond_broadcast(void);
+extern void __cxa_guard_acquire(void);
+extern void __cxa_guard_release(void);
 
 #define MISSING_FUN(f) void (f)(void) { printf("Unknown call to %s\n", #f); exit(1); }
 
@@ -172,6 +215,8 @@ MISSING_FUN(c_format_unix_time)
 MISSING_FUN(c_format_unix_time_gmt)
 MISSING_FUN(c_parse_unix_time)
 MISSING_FUN(c_parse_unix_time_gmt)
+MISSING_FUN(__cxa_begin_catch)
+MISSING_FUN(_ZSt9terminatev)
 
 typedef void SymbolAddr;
 typedef char SymbolName;
@@ -198,10 +243,17 @@ typedef struct _RtsSymbolVal {
     SymType type;
 } RtsSymbolVal;
 
+// work around built-ins being referenced from libraries, and us not being able to &<built-in>; instead
+// wrap the built-in into a function.
+//int32_t ___sync_val_compare_and_swap_1(volatile int32_t* ptr, int32_t oldval, int32_t newval) {
+//  return __sync_val_compare_and_swap_1(ptr, oldval, newval);
+//}
+
 #define SYM(x) { #x, (void*)(&x), STRENGTH_NORMAL, 1 }
 typedef mode_t (*umask_func_ptr_t)(mode_t);
 
 RtsSymbolVal my_iserv_syms[] = {
+    // { "__sync_val_compare_and_swap_1", (void*)(&___sync_val_compare_and_swap_1), STRENGTH_NORMAL, 1 },
     SYM(strlen),
     SYM(__aeabi_idiv),
     SYM(__aeabi_idivmod),
@@ -323,6 +375,7 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(__memset_chk),
     SYM(pthread_rwlock_init),
     SYM(readdir),
+    SYM(readdir_r),
     SYM(socket),
     SYM(__stack_chk_fail),
     SYM(__stack_chk_guard),
@@ -450,6 +503,53 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(puts),
     SYM(getrusage),
     SYM(__aeabi_memclr8),
+    SYM(openat),
+    SYM(futimes),
+    SYM(lutimes),
+    SYM(android_get_application_target_sdk_version),
+    SYM(dlclose),
+    SYM(dlerror),
+    SYM(dlsym),
+    SYM(dlopen),
+    SYM(execv),
+    SYM(execve),
+    SYM(execvp),
+    SYM(execvpe),
+    SYM(setrlimit),
+    SYM(sigpending),
+    SYM(getrlimit),
+    SYM(fallocate),
+    SYM(rewinddir),
+    SYM(seekdir),
+    SYM(telldir),
+    SYM(__gxx_personality_v0),
+    SYM(__cxa_begin_catch),
+    SYM(_ZSt9terminatev),
+    SYM(_Unwind_Resume),
+    SYM(__aeabi_d2f),
+    SYM(__aeabi_d2iz),
+    SYM(__aeabi_dadd),
+    SYM(__aeabi_dcmpeq),
+    SYM(__aeabi_dcmpge),
+    SYM(__aeabi_dcmpgt),
+    SYM(__aeabi_dcmple),
+    SYM(__aeabi_dcmplt),
+    SYM(__aeabi_ddiv),
+    SYM(__aeabi_dmul),
+    SYM(__aeabi_f2d),
+    SYM(__aeabi_fcmpeq),
+    SYM(__aeabi_fcmpge),
+    SYM(__aeabi_fcmpgt),
+    SYM(__aeabi_fcmple),
+    SYM(__aeabi_i2d),
+    SYM(__atomic_load_4),
+    SYM(__atomic_store_4),
+    SYM(pthread_cond_wait),
+    SYM(vasprintf),
+    SYM(pthread_cond_broadcast),
+    SYM(__cxa_guard_acquire),
+    SYM(ceil),
+    SYM(__cxa_guard_release),
     { 0, 0, STRENGTH_NORMAL, 1 } /* sentinel */
 };
 
