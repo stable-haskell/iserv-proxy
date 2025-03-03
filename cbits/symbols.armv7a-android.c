@@ -208,6 +208,71 @@ extern void pthread_cond_wait(void);
 extern void pthread_cond_broadcast(void);
 extern void __cxa_guard_acquire(void);
 extern void __cxa_guard_release(void);
+extern void getpeername(void);
+extern void mktime(void);
+extern void __poll_chk(void);
+extern void pthread_attr_destroy(void);
+extern void pthread_attr_init(void);
+extern void pthread_attr_setdetachstate(void);
+extern void pthread_cond_destroy(void);
+extern void pthread_cond_init(void);
+extern void pthread_cond_signal(void);
+extern void pthread_cond_timedwait(void);
+extern void pthread_exit(void);
+extern void recvfrom(void);
+extern void recvmmsg(void);
+extern void sendmmsg(void);
+extern void sendto(void);
+extern void timezone(void);
+extern void fdatasync(void);
+extern void fdopendir(void);
+extern void nanosleep(void);
+extern void sigsuspend(void);
+extern void __assert(void);
+extern void _Z21__libc_shared_globalsv(void);
+extern void __strcpy_chk(void);
+extern void __cxa_thread_finalize(void);
+extern void kill(void);
+extern void sigismember(void);
+extern void __vsnprintf_chk(void);
+extern void setitimer(void);
+extern void sigfillset(void);
+extern void __readlink_chk(void);
+extern void __libc_stdio_cleanup(void);
+extern void sigdelset(void);
+extern void writev(void);
+extern void prctl(void);
+extern void getuid(void);
+extern void __fsetxattr(void);
+extern void setxattr(void);
+extern void setuid(void);
+extern void setresuid(void);
+extern void setgid(void);
+extern void setresgid(void);
+extern void getegid(void);
+extern void getgid(void);
+extern void setgroups(void);
+extern void getgroups(void);
+extern void chdir(void);
+extern void __fstatfs64(void);
+extern void __statfs64(void);
+extern void fchownat(void);
+extern void symlinkat(void);
+extern void truncate64(void);
+extern void mknodat(void);
+extern void fallocate64(void);
+extern void __arm_fadvise64_64(void);
+extern void setsid(void);
+//extern void _exit(void);
+extern void fchdir(void);
+extern void utimensat(void);
+extern void getppid(void);
+extern void getpgid(void);
+extern void setpgid(void);
+extern void setpriority(void);
+extern void __getpriority(void);
+extern void __emutls_get_address(void);
+extern void __cxa_guard_abort(void);
 
 #define MISSING_FUN(f) void (f)(void) { printf("Unknown call to %s\n", #f); exit(1); }
 
@@ -217,6 +282,9 @@ MISSING_FUN(c_parse_unix_time)
 MISSING_FUN(c_parse_unix_time_gmt)
 MISSING_FUN(__cxa_begin_catch)
 MISSING_FUN(_ZSt9terminatev)
+MISSING_FUN(__loader_add_thread_local_dtor)
+MISSING_FUN(__loader_remove_thread_local_dtor)
+MISSING_FUN(__clang_call_terminate)
 
 typedef void SymbolAddr;
 typedef char SymbolName;
@@ -550,6 +618,77 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(__cxa_guard_acquire),
     SYM(ceil),
     SYM(__cxa_guard_release),
+    SYM(getpeername),
+    SYM(mktime),
+    SYM(__poll_chk),
+    SYM(pthread_attr_destroy),
+    SYM(pthread_attr_init),
+    SYM(pthread_attr_setdetachstate),
+    SYM(pthread_cond_destroy),
+    SYM(pthread_cond_init),
+    SYM(pthread_cond_signal),
+    SYM(pthread_cond_timedwait),
+    SYM(pthread_exit),
+    SYM(recvfrom),
+    SYM(recvmmsg),
+    SYM(sendmmsg),
+    SYM(sendto),
+    SYM(timezone),
+    SYM(fdatasync),
+    SYM(fdopendir),
+    SYM(nanosleep),
+    SYM(sigsuspend),
+    SYM(__assert),
+    SYM(__strlcpy_chk),
+    SYM(_Z21__libc_shared_globalsv),
+    SYM(__strcpy_chk),
+    SYM(getline),
+    SYM(__loader_add_thread_local_dtor),
+    SYM(__loader_remove_thread_local_dtor),
+    SYM(__cxa_thread_finalize),
+    SYM(kill),
+    SYM(sigismember),
+    SYM(__vsnprintf_chk),
+    SYM(ctermid),
+    SYM(setitimer),
+    SYM(sigfillset),
+    SYM(__readlink_chk),
+    SYM(__libc_stdio_cleanup),
+    SYM(sigdelset),
+    SYM(writev),
+    SYM(prctl),
+    SYM(getuid),
+    SYM(__fsetxattr),
+    SYM(setxattr),
+    SYM(setuid),
+    SYM(setresuid),
+    SYM(setgid),
+    SYM(setresgid),
+    SYM(getegid),
+    SYM(getgid),
+    SYM(setgroups),
+    SYM(getgroups),
+    SYM(chdir),
+    SYM(__fstatfs64),
+    SYM(__statfs64),
+    SYM(fchownat),
+    SYM(symlinkat),
+    SYM(truncate64),
+    SYM(mknodat),
+    SYM(fallocate64),
+    SYM(__arm_fadvise64_64),
+    SYM(setsid),
+//    SYM(_exit),
+    SYM(fchdir),
+    SYM(utimensat),
+    SYM(getppid),
+    SYM(getpgid),
+    SYM(setpgid),
+    SYM(setpriority),
+    SYM(__getpriority),
+    SYM(__emutls_get_address),
+    SYM(__cxa_guard_abort),
+    SYM(__clang_call_terminate),
     { 0, 0, STRENGTH_NORMAL, 1 } /* sentinel */
 };
 
