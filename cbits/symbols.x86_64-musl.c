@@ -1,3 +1,7 @@
+// It looks like this file is probably incorrect.
+// TODO enable iserv-proxy for musl64 tests and update this
+// file to fix unresolved external issues.
+#if 0
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
@@ -316,3 +320,4 @@ RtsSymbolVal my_iserv_syms[] = {
 RtsSymbolVal* iserv_syms() {
     return my_iserv_syms;
 }
+#if 0
