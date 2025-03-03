@@ -263,7 +263,7 @@ extern void mknodat(void);
 extern void fallocate64(void);
 extern void __arm_fadvise64_64(void);
 extern void setsid(void);
-//extern void _exit(void);
+extern void _exit(int) __attribute__((noreturn));
 extern void fchdir(void);
 extern void utimensat(void);
 extern void getppid(void);
@@ -678,7 +678,7 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(fallocate64),
     SYM(__arm_fadvise64_64),
     SYM(setsid),
-//    SYM(_exit),
+    SYM(_exit),
     SYM(fchdir),
     SYM(utimensat),
     SYM(getppid),
