@@ -320,4 +320,4 @@ RtsSymbolVal my_iserv_syms[] = {
 RtsSymbolVal* iserv_syms() {
     return my_iserv_syms;
 }
-#if 0
+#endif
