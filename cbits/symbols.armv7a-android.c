@@ -273,6 +273,44 @@ extern void setpriority(void);
 extern void __getpriority(void);
 extern void __emutls_get_address(void);
 extern void __cxa_guard_abort(void);
+extern void killpg(void);
+extern void alarm(void);
+extern void sem_post(void);
+extern void sem_trywait(void);
+extern void sem_wait(void);
+extern void sem_unlink(void);
+extern void sem_close(void);
+extern void sem_open(void);
+extern void sem_getvalue(void);
+extern void getlogin(void);
+extern void getgrent(void);
+extern void setgrent(void);
+extern void endgrent(void);
+extern void getpwent(void);
+extern void setpwent(void);
+extern void endpwent(void);
+extern void seteuid(void);
+extern void setegid(void);
+extern void getpwnam_r(void);
+extern void getpwuid_r(void);
+extern void getgrnam_r(void);
+extern void getgrgid_r(void);
+extern void pathconf(void);
+extern void chown(void);
+extern void lchown(void);
+extern void symlink(void);
+extern void mknod(void);
+extern void posix_fallocate64(void);
+extern void posix_fadvise64(void);
+extern void ttyname(void);
+extern void openpty(void);
+extern void fpathconf(void);
+extern void futimens(void);
+extern void getpgrp(void);
+extern void getpriority(void);
+extern void nice(void);
+extern void tcgetpgrp(void);
+extern void tcsetpgrp(void);
 
 #define MISSING_FUN(f) void (f)(void) { printf("Unknown call to %s\n", #f); exit(1); }
 
@@ -689,6 +727,51 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(__emutls_get_address),
     SYM(__cxa_guard_abort),
     SYM(__clang_call_terminate),
+    SYM(killpg),
+    SYM(alarm),
+    SYM(sem_post),
+    SYM(sem_trywait),
+    SYM(sem_wait),
+    SYM(sem_unlink),
+    SYM(sem_close),
+    SYM(sem_open),
+    SYM(sem_getvalue),
+    SYM(getlogin),
+    SYM(getgrent),
+    SYM(setgrent),
+    SYM(endgrent),
+    SYM(getpwent),
+    SYM(setpwent),
+    SYM(endpwent),
+    SYM(seteuid),
+    SYM(setegid),
+    SYM(getpwnam_r),
+    SYM(getpwuid_r),
+    SYM(getgrnam_r),
+    SYM(getgrgid_r),
+    SYM(pathconf),
+    SYM(chown),
+    SYM(lchown),
+    SYM(symlink),
+    SYM(mknod),
+    SYM(clearenv),
+    SYM(posix_fallocate64),
+    SYM(posix_fadvise64),
+    SYM(mkdtemp),
+    SYM(mkstemps),
+    SYM(mkstemp),
+    SYM(ttyname),
+    SYM(openpty),
+    SYM(ptsname),
+    SYM(fpathconf),
+    SYM(futimens),
+    SYM(getpgrp),
+    SYM(exit),
+    SYM(getpriority),
+    SYM(nice),
+    SYM(tcgetpgrp),
+    SYM(tcsetpgrp),
+    SYM(realpath),
     { 0, 0, STRENGTH_NORMAL, 1 } /* sentinel */
 };
 
