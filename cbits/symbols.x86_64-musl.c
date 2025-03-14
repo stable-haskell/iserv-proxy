@@ -320,4 +320,9 @@ RtsSymbolVal my_iserv_syms[] = {
 RtsSymbolVal* iserv_syms() {
     return my_iserv_syms;
 }
+
+// Name used in GHC >=9.12
+RtsSymbolVal* rtsExtraSyms() {
+    return my_iserv_syms;
+}
 #endif
