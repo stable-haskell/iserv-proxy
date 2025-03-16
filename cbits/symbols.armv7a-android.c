@@ -311,6 +311,9 @@ extern void getpriority(void);
 extern void nice(void);
 extern void tcgetpgrp(void);
 extern void tcsetpgrp(void);
+extern void unlinkat(void);
+extern void fchmodat(void);
+extern void fstatat(void);
 
 #define MISSING_FUN(f) void (f)(void) { printf("Unknown call to %s\n", #f); exit(1); }
 
@@ -772,6 +775,9 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(tcgetpgrp),
     SYM(tcsetpgrp),
     SYM(realpath),
+    SYM(unlinkat),
+    SYM(fchmodat),
+    SYM(fstatat),
     { 0, 0, STRENGTH_NORMAL, 1 } /* sentinel */
 };
 

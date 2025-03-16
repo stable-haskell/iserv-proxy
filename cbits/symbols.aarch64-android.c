@@ -473,6 +473,9 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(pthread_attr_setdetachstate),
     SYM(pthread_attr_destroy),
     SYM(nice),
+    SYM(unlinkat),
+    SYM(fchmodat),
+    SYM(fstatat),
     { 0, 0, STRENGTH_NORMAL, 1 } /* sentinel */
 };
 
