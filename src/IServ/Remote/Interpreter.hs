@@ -3,7 +3,8 @@ module IServ.Remote.Interpreter where
 
 import Network.Socket
 
-import IServ (serv)
+import GHCi.Server (serv)
+import GHCi.Message
 import IServ.Remote.Message
 
 import System.IO
@@ -153,7 +154,7 @@ socketToPipe sock = do
   hSetBuffering hdl NoBuffering
 
   lo_ref <- newIORef Nothing
-  pure Pipe{ pipeRead = hdl, pipeWrite = hdl, pipeLeftovers = lo_ref }
+  mkPipeFromHandles hdl hdl
 
 acceptSocket :: Socket -> IO Socket
 acceptSocket = fmap fst . accept

@@ -109,8 +109,7 @@ main = do
   inh  <- getGhcHandle rfd2
   outh <- getGhcHandle wfd1
   installSignalHandlers
-  lo_ref <- newIORef Nothing
-  let in_pipe = Pipe{pipeRead = inh, pipeWrite = outh, pipeLeftovers = lo_ref}
+  in_pipe <- mkPipeFromHandles inh outh
 
   when verbose $
     trace ("Trying to connect to " ++ host_ip ++ ":" ++ (show port))
@@ -307,5 +306,4 @@ socketToPipe sock = do
   hdl <- socketToHandle sock ReadWriteMode
   hSetBuffering hdl NoBuffering
 
-  lo_ref <- newIORef Nothing
-  pure Pipe{ pipeRead = hdl, pipeWrite = hdl, pipeLeftovers = lo_ref }
+  mkPipeFromHandles hdl hdl
