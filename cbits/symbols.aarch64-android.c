@@ -105,6 +105,7 @@ extern void __vfprintf(void);
 void * __gxx_personality_v0;
 extern void __cxa_guard_acquire(void);
 extern void __cxa_guard_release(void);
+extern void __strncpy_chk(void);
 
 #define MISSING_FUN(f) void (f)(void) { printf("Unknown call to `%s'\n", #f); exit(1); }
 
@@ -282,7 +283,7 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(memchr),SYM(strcpy),SYM(strchr),SYM(strncpy),SYM(strrchr),
     SYM(strcat),SYM(strncmp),SYM(strdup),
     SYM(strtoul),SYM(strspn),SYM(strtol),SYM(strstr),SYM(strcspn),
-    SYM(__strncpy_chk2),SYM(__memcpy_chk),
+    SYM(__strncpy_chk),SYM(__strncpy_chk2),SYM(__memcpy_chk),
     // ctype.h
     SYM(__ctype_get_mb_cur_max),
     // wchar.h

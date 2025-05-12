@@ -314,6 +314,7 @@ extern void tcsetpgrp(void);
 extern void unlinkat(void);
 extern void fchmodat(void);
 extern void fstatat(void);
+extern void __strncpy_chk(void);
 
 #define MISSING_FUN(f) void (f)(void) { printf("Unknown call to %s\n", #f); exit(1); }
 
@@ -495,6 +496,7 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(__strlen_chk),
     SYM(strncmp),
     SYM(strncpy),
+    SYM(__strncpy_chk),
     SYM(__strncpy_chk2),
     SYM(strrchr),
     SYM(strspn),
