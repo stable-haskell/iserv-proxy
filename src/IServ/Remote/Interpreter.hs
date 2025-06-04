@@ -22,8 +22,11 @@ import System.FilePath (takeDirectory, (</>), dropTrailingPathSeparator,
 import GHCi.ResolvedBCO
 
 import Data.IORef
-import GHCi.Message (Pipe(..), Msg(..), Message(..), readPipe, writePipe)
-
+import GHCi.Message (Pipe(..), Msg(..), Message(..), readPipe, writePipe
+#if MIN_VERSION_ghci(9,13,0)
+    mkPipeFromHandles
+#endif
+  )
 import Foreign.C.String
 
 import Data.Binary
@@ -160,9 +163,12 @@ socketToPipe :: Socket -> IO Pipe
 socketToPipe sock = do
   hdl <- socketToHandle sock ReadWriteMode
   hSetBuffering hdl NoBuffering
-
+#if MIN_VERSION_ghci(9,13,0)
+  mkPipeFromHandles hdl hdl
+#else
   lo_ref <- newIORef Nothing
   pure Pipe{ pipeRead = hdl, pipeWrite = hdl, pipeLeftovers = lo_ref }
+#endif
 
 acceptSocket :: Socket -> IO Socket
 acceptSocket = fmap fst . accept
