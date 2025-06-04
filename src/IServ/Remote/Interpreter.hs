@@ -24,7 +24,7 @@ import GHCi.ResolvedBCO
 import Data.IORef
 import GHCi.Message (Pipe(..), Msg(..), Message(..), readPipe, writePipe
 #if MIN_VERSION_ghci(9,13,0)
-    mkPipeFromHandles
+    , mkPipeFromHandles
 #endif
   )
 import Foreign.C.String
