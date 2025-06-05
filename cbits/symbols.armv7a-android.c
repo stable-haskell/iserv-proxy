@@ -522,6 +522,7 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(getsockopt),
     SYM(localtime_r),
     SYM(__memmove_chk),
+    SYM(__memchr_chk),
     SYM(mmap),
     SYM(opendir),
     SYM(pthread_rwlock_rdlock),

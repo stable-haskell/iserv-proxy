@@ -302,6 +302,7 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(__strchr_chk),
     SYM(__memset_chk),
     SYM(__memmove_chk),
+    SYM(__memchr_chk),
     SYM(__stack_chk_fail),
     SYM(memmove),
     SYM(memcmp),
