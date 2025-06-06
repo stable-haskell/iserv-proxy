@@ -478,6 +478,7 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(unlinkat),
     SYM(fchmodat),
     SYM(fstatat),
+    SYM(floor),
     { 0, 0, STRENGTH_NORMAL, 1 } /* sentinel */
 };
 
