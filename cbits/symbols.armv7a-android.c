@@ -61,6 +61,7 @@ extern void fcntl(void);
 extern void open(void);
 extern void access(void);
 extern void environ(void);
+extern void lseek(void);
 extern void lseek64(void);
 extern void umask(void);
 extern void poll(void);
@@ -89,6 +90,7 @@ extern void uname(void);
 extern void tzset(void);
 extern void sysconf(void);
 extern void socket(void);
+extern void socketpair(void);
 extern void readdir(void);
 extern void readdir_r(void);
 extern void pthread_rwlock_init(void);
@@ -439,6 +441,7 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(tanf),
     SYM(utime),
     SYM(asinf),
+    SYM(lseek),
     SYM(lseek64),
     SYM(umask),
     SYM(acosf),
@@ -487,6 +490,7 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(readdir),
     SYM(readdir_r),
     SYM(socket),
+    SYM(socketpair),
     SYM(__stack_chk_fail),
     SYM(__stack_chk_guard),
     SYM(strchr),
@@ -498,6 +502,7 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(strncpy),
     SYM(__strncpy_chk),
     SYM(__strncpy_chk2),
+    SYM(strpbrk),
     SYM(strrchr),
     SYM(strspn),
     SYM(strstr),

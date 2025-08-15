@@ -172,7 +172,7 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(setsockopt),SYM(socket),SYM(getsockname),SYM(select),
     SYM(getpeername),SYM(__cmsg_nxthdr),SYM(recv),SYM(recvfrom),
     SYM(recvmsg),SYM(send),SYM(sendmsg),SYM(sendto),SYM(writev),
-    SYM(accept4),
+    SYM(accept4),SYM(socketpair),
     // pthread.h
     SYM(pthread_equal),SYM(pthread_getspecific),SYM(pthread_key_create),
     SYM(pthread_key_delete),SYM(pthread_once),SYM(pthread_rwlock_destroy),
@@ -283,6 +283,7 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(memchr),SYM(strcpy),SYM(strchr),SYM(strncpy),SYM(strrchr),
     SYM(strcat),SYM(strncmp),SYM(strdup),
     SYM(strtoul),SYM(strspn),SYM(strtol),SYM(strstr),SYM(strcspn),
+    SYM(strpbrk),
     SYM(__strncpy_chk),SYM(__strncpy_chk2),SYM(__memcpy_chk),
     // ctype.h
     SYM(__ctype_get_mb_cur_max),
