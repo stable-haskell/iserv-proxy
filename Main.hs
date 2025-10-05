@@ -88,14 +88,14 @@ main = do
   hSetBuffering stdout LineBuffering
 
   args <- getArgs
-  (wfd1, rfd2, host_ip, port, rest) <-
+  (outh, inh, host_ip, port, rest) <-
       case args of
         arg0:arg1:arg2:arg3:rest -> do
-            let wfd1 = read arg0
-                rfd2 = read arg1
-                ip   = arg2
+            outh <- readGhcHandle arg0
+            inh <- readGhcHandle arg1
+            let ip   = arg2
                 port = read arg3
-            return (wfd1, rfd2, ip, port, rest)
+            return (outh, inh, ip, port, rest)
         _ -> dieWithUsage
 
   let verbose = "-v" `elem` rest
@@ -105,10 +105,7 @@ main = do
     dieWithUsage
 
   when verbose $
-    printf "GHC iserv starting (in: %d; out: %d)\n"
-      (fromIntegral rfd2 :: Int) (fromIntegral wfd1 :: Int)
-  inh  <- getGhcHandle rfd2
-  outh <- getGhcHandle wfd1
+    printf "GHC iserv starting (in: %s; out: %s)\n" (show inh) (show outh)
   installSignalHandlers
 #if MIN_VERSION_ghci(9,13,0)
   in_pipe <- mkPipeFromHandles inh outh
