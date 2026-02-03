@@ -317,6 +317,30 @@ extern void unlinkat(void);
 extern void fchmodat(void);
 extern void fstatat(void);
 extern void __strncpy_chk(void);
+extern void tcsetattr(void);
+extern void tcgetattr(void);
+extern void statx(void);
+extern void tcflow(void);
+extern void tcflush(void);
+extern void tcdrain(void);
+extern void tcsendbreak(void);
+extern void cfsetospeed(void);
+extern void cfgetospeed(void);
+extern void cfsetispeed(void);
+extern void cfgetispeed(void);
+extern void pipe2(void);
+extern void initgroups(void);
+extern void posix_spawn_file_actions_init(void);
+extern void posix_spawnattr_init(void);
+extern void posix_spawn_file_actions_destroy(void);
+extern void posix_spawn_file_actions_addopen(void);
+extern void posix_spawn_file_actions_adddup2(void);
+extern void posix_spawn_file_actions_addclose(void);
+extern void posix_spawn_file_actions_addchdir_np(void);
+extern void posix_spawnattr_destroy(void);
+extern void posix_spawnattr_setflags(void);
+extern void posix_spawnattr_setsigdefault(void);
+extern void posix_spawnp(void);
 
 #define MISSING_FUN(f) void (f)(void) { printf("Unknown call to %s\n", #f); exit(1); }
 
@@ -786,6 +810,30 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(unlinkat),
     SYM(fchmodat),
     SYM(fstatat),
+    SYM(tcsetattr),
+    SYM(tcgetattr),
+    SYM(statx),
+    SYM(tcflow),
+    SYM(tcflush),
+    SYM(tcdrain),
+    SYM(tcsendbreak),
+    SYM(cfsetospeed),
+    SYM(cfgetospeed),
+    SYM(cfsetispeed),
+    SYM(cfgetispeed),
+    SYM(pipe2),
+    SYM(initgroups),
+    SYM(posix_spawn_file_actions_init),
+    SYM(posix_spawnattr_init),
+    SYM(posix_spawn_file_actions_destroy),
+    SYM(posix_spawn_file_actions_addopen),
+    SYM(posix_spawn_file_actions_adddup2),
+    SYM(posix_spawn_file_actions_addclose),
+    SYM(posix_spawn_file_actions_addchdir_np),
+    SYM(posix_spawnattr_destroy),
+    SYM(posix_spawnattr_setflags),
+    SYM(posix_spawnattr_setsigdefault),
+    SYM(posix_spawnp),
     { 0, 0, STRENGTH_NORMAL, 1 } /* sentinel */
 };
 
