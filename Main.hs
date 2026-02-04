@@ -82,6 +82,11 @@ dieWithUsage = do
     msg = "usage: iserv <write-fd> <read-fd> <interpreter ip> <interpreter port> [-v]"
 #endif
 
+#if !MIN_VERSION_ghci(9,7,0)
+readGhcHandle :: String -> IO Handle
+readGhcHandle = getGhcHandle . read
+#endif
+
 main :: IO ()
 main = do
   hSetBuffering stdin LineBuffering
