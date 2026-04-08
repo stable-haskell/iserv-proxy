@@ -26,7 +26,7 @@ somewhat clear:
  | GHC <--> proxy<+-----+>  iserv  |
  '----------------'  ^  '----------'
         ^            |
-        |            '-- communication via sockets
+        |            '-- communication via sockets or pipes
         '--- communication via pipes
 
 For now, we won't support multiple concurrent
@@ -61,6 +61,7 @@ import Text.Printf
 import GHC.Fingerprint (getFileHash)
 import System.Directory
 import System.FilePath (isAbsolute)
+import System.Process
 
 import Data.Binary
 import qualified Data.ByteString as BS
@@ -77,9 +78,11 @@ dieWithUsage = do
     die $ prog ++ ": " ++ msg
   where
 #if defined(WINDOWS)
-    msg = "usage: iserv <write-handle> <read-handle> <interpreter ip> <interpreter port> [-v]"
+    msg = "usage: iserv <write-handle> <read-handle> <interpreter ip> <interpreter port> [-v]\n"
+       ++ "       iserv <write-handle> <read-handle> --pipe <cmd> [args...] [-v]"
 #else
-    msg = "usage: iserv <write-fd> <read-fd> <interpreter ip> <interpreter port> [-v]"
+    msg = "usage: iserv <write-fd> <read-fd> <interpreter ip> <interpreter port> [-v]\n"
+       ++ "       iserv <write-fd> <read-fd> --pipe <cmd> [args...] [-v]"
 #endif
 
 #if !MIN_VERSION_ghci(9,7,0)
@@ -93,45 +96,108 @@ main = do
   hSetBuffering stdout LineBuffering
 
   args <- getArgs
-  (outh, inh, host_ip, port, rest) <-
-      case args of
-        arg0:arg1:arg2:arg3:rest -> do
-            outh <- readGhcHandle arg0
-            inh <- readGhcHandle arg1
-            let ip   = arg2
-                port = read arg3
-            return (outh, inh, ip, port, rest)
-        _ -> dieWithUsage
+  case args of
+    -- New --pipe mode: <ghc-write-fd> <ghc-read-fd> --pipe <cmd> [args...]
+    (arg0:arg1:"--pipe":cmdArgs) | not (null cmdArgs) -> do
+      outh <- readGhcHandle arg0
+      inh <- readGhcHandle arg1
 
-  let verbose = "-v" `elem` rest
-      noLoadCall = "--no-load-call" `elem` rest
+      -- Extract proxy flags that appear before the command
+      let verbose = "-v" `elem` cmdArgs
+          noLoadCall = "--no-load-call" `elem` cmdArgs
 
-  when (any (not . (`elem` ["-v", "--no-load-call"])) rest)
-    dieWithUsage
+      when verbose $
+        trace ("Spawning interpreter: " ++ unwords cmdArgs)
 
-  when verbose $
-    printf "GHC iserv starting (in: %s; out: %s)\n" (show inh) (show outh)
-  installSignalHandlers
+      installSignalHandlers
 #if MIN_VERSION_ghci(9,13,0)
-  in_pipe <- mkPipeFromHandles inh outh
+      in_pipe <- mkPipeFromHandles inh outh
 #else
-  lo_ref <- newIORef Nothing
-  let in_pipe = Pipe{pipeRead = inh, pipeWrite = outh, pipeLeftovers = lo_ref}
+      lo_ref <- newIORef Nothing
+      let in_pipe = Pipe{pipeRead = inh, pipeWrite = outh, pipeLeftovers = lo_ref}
 #endif
 
-  when verbose $
-    trace ("Trying to connect to " ++ host_ip ++ ":" ++ (show port))
+      (out_pipe, ph) <- spawnInterpreter verbose cmdArgs
 
-  out_pipe <- do
-    let go n = E.try (connectTo verbose host_ip port >>= socketToPipe) >>= \case
-          Left e | n == 0 -> E.throw (e :: E.SomeException)
-                 | n >  0 -> threadDelay 500000 >> go (n - 1)
-          Right a -> return a
-      in go 120 -- wait for up to 60seconds (polling every 0.5s).
+      when verbose $
+        trace "Starting proxy"
+      E.finally
+        (proxy verbose noLoadCall in_pipe out_pipe)
+        (do when verbose $ trace "Terminating interpreter..."
+            terminateProcess ph
+            _ <- waitForProcess ph
+            return ())
+
+    -- Original TCP mode (backward compatible)
+    (arg0:arg1:arg2:arg3:rest) -> do
+      outh <- readGhcHandle arg0
+      inh <- readGhcHandle arg1
+      let ip   = arg2
+          port = read arg3
+
+      let verbose = "-v" `elem` rest
+          noLoadCall = "--no-load-call" `elem` rest
+
+      when (any (not . (`elem` ["-v", "--no-load-call"])) rest)
+        dieWithUsage
+
+      when verbose $
+        printf "GHC iserv starting (in: %s; out: %s)\n" (show inh) (show outh)
+      installSignalHandlers
+#if MIN_VERSION_ghci(9,13,0)
+      in_pipe <- mkPipeFromHandles inh outh
+#else
+      lo_ref <- newIORef Nothing
+      let in_pipe = Pipe{pipeRead = inh, pipeWrite = outh, pipeLeftovers = lo_ref}
+#endif
+
+      when verbose $
+        trace ("Trying to connect to " ++ ip ++ ":" ++ (show port))
+
+      out_pipe <- do
+        let go n = E.try (connectTo verbose ip port >>= socketToPipe) >>= \case
+              Left e | n == 0 -> E.throw (e :: E.SomeException)
+                     | n >  0 -> threadDelay 500000 >> go (n - 1)
+              Right a -> return a
+          in go 120 -- wait for up to 60seconds (polling every 0.5s).
+
+      when verbose $
+        trace "Starting proxy"
+      proxy verbose noLoadCall in_pipe out_pipe
+
+    _ -> dieWithUsage
+
+
+-- | Spawn the interpreter as a child process and create a Pipe
+-- from its stdin/stdout handles.
+spawnInterpreter :: Bool -> [String] -> IO (Pipe, ProcessHandle)
+spawnInterpreter verbose (cmd:args) = do
+  let cp = (proc cmd args)
+        { std_in  = CreatePipe
+        , std_out = CreatePipe
+        , std_err = Inherit
+        }
+  (Just hIn, Just hOut, _, ph) <- createProcess cp
 
   when verbose $
-    trace "Starting proxy"
-  proxy verbose noLoadCall in_pipe out_pipe
+    trace "Interpreter process spawned"
+
+  hSetBuffering hIn NoBuffering
+  hSetBuffering hOut NoBuffering
+  hSetBinaryMode hIn True
+  hSetBinaryMode hOut True
+
+  -- hIn is the child's stdin (we write to it)
+  -- hOut is the child's stdout (we read from it)
+#if MIN_VERSION_ghci(9,13,0)
+  pipe <- mkPipeFromHandles hOut hIn
+#else
+  lo_ref <- newIORef Nothing
+  let pipe = Pipe{ pipeRead = hOut, pipeWrite = hIn, pipeLeftovers = lo_ref }
+#endif
+  return (pipe, ph)
+spawnInterpreter _ [] = die "iserv-proxy: --pipe requires a command"
+
 
 -- | A hook, to transform outgoing (proxy -> interpreter)
 -- messages prior to sending them to the interpreter.

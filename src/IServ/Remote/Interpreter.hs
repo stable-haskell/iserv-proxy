@@ -1,5 +1,5 @@
 {-# LANGUAGE CPP, ForeignFunctionInterface, GADTs, LambdaCase #-}
-module IServ.Remote.Interpreter where
+module IServ.Remote.Interpreter (startInterpreter', startInterpreterStdio) where
 
 import Network.Socket
 
@@ -36,9 +36,10 @@ import qualified Data.ByteString as BS
 
 import Text.Printf
 import System.Environment (getProgName)
+import GHC.IO.Handle (hDuplicate, hDuplicateTo)
 
 trace :: String -> IO ()
-trace s = getProgName >>= \name -> printf "[%20s] %s\n" name s
+trace s = getProgName >>= \name -> hPrintf stderr "[%20s] %s\n" name s
 
 dropLeadingPathSeparator :: FilePath -> FilePath
 dropLeadingPathSeparator p | isAbsolute p = joinPath (drop 1 (splitPath p))
@@ -62,9 +63,9 @@ startInterpreter verbose port s = do
   _ <- forkIO $ startInterpreter' verbose True base_path (toEnum port)
   return ()
 
--- | @startInterpreter'@ provdes a blocking haskell interface, that
+-- | @startInterpreter'@ provides a blocking haskell interface, that
 -- the hosting application on the target can use to start the
--- interpreter process.
+-- interpreter process.  Uses TCP sockets for communication.
 startInterpreter' :: Bool -> Bool -> String -> PortNumber -> IO ()
 startInterpreter' verbose noLoadCall base_path port = do
   hSetBuffering stdin LineBuffering
@@ -82,7 +83,7 @@ startInterpreter' verbose noLoadCall base_path port = do
   listen sock 1
 
   actualPort <- socketPort sock
-  putStrLn $ "Listening on port " ++ show actualPort
+  hPutStrLn stderr $ "Listening on port " ++ show actualPort
 
   forever $ do
     when verbose $ trace "Opening socket"
@@ -91,6 +92,35 @@ startInterpreter' verbose noLoadCall base_path port = do
     uninterruptibleMask $ serv verbose (hook verbose noLoadCall base_path pipe) pipe
     when verbose $ trace "serv ended"
     return ()
+
+-- | Start the interpreter in stdio mode.  Reads protocol data from
+-- stdin and writes to stdout, bypassing TCP entirely.  All diagnostic
+-- output goes to stderr.
+startInterpreterStdio :: Bool -> Bool -> String -> IO ()
+startInterpreterStdio verbose noLoadCall base_path = do
+  -- Save the real stdout fd for protocol data, then redirect the
+  -- Haskell stdout handle to stderr.  This ensures any library code
+  -- (including serv) that writes to stdout won't corrupt the data channel.
+  realStdout <- hDuplicate stdout
+  hDuplicateTo stderr stdout
+
+  hSetBuffering stdin NoBuffering
+  hSetBuffering realStdout NoBuffering
+  hSetBinaryMode stdin True
+  hSetBinaryMode realStdout True
+
+#if MIN_VERSION_ghci(9,13,0)
+  pipe <- mkPipeFromHandles stdin realStdout
+#else
+  lo_ref <- newIORef Nothing
+  let pipe = Pipe{ pipeRead = stdin, pipeWrite = realStdout, pipeLeftovers = lo_ref }
+#endif
+
+  when verbose $ trace $ "Starting serv (stdio mode), DocRoot: " ++ base_path
+
+  uninterruptibleMask $ serv verbose (hook verbose noLoadCall base_path pipe) pipe
+
+  when verbose $ trace "serv ended"
 
 -- | The iserv library may need access to files, specifically
 -- archives and object files to be linked. If ghc and the interpreter
@@ -130,11 +160,11 @@ handleLoad pipe path localPath = do
 hook :: Bool -> Bool -> String -> Pipe -> Msg -> IO Msg
 hook verbose noLoadCall base_path pipe m = case m of
   Msg (AddLibrarySearchPath p) -> do
-    when verbose $ putStrLn ("Need Path: " ++ (base_path <//> p))
+    when verbose $ hPutStrLn stderr ("Need Path: " ++ (base_path <//> p))
     createDirectoryIfMissing True (base_path <//> p)
     return $ Msg (AddLibrarySearchPath (base_path <//> p))
   Msg (LoadObj path) -> do
-    when verbose $ putStrLn ("Need Obj: " ++ (base_path <//> path))
+    when verbose $ hPutStrLn stderr ("Need Obj: " ++ (base_path <//> path))
     handleLoad pipe path (base_path <//> path)
     return $ Msg (LoadObj (base_path <//> path))
   Msg (LoadArchive path) -> do
