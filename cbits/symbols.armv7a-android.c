@@ -353,6 +353,33 @@ MISSING_FUN(_ZSt9terminatev)
 MISSING_FUN(__loader_add_thread_local_dtor)
 MISSING_FUN(__loader_remove_thread_local_dtor)
 MISSING_FUN(__clang_call_terminate)
+// Symbols absent from the armv7a Android NDK's bionic / libc++ as
+// shipped with our current toolchain.  The dynamic linker would
+// otherwise fail to load this library when it sees the unresolved
+// references via `SYM(...)` below.  These stubs are never expected
+// to be invoked at runtime; if a real call ever lands here we
+// `exit(1)` with a diagnostic so the caller is visible instead of
+// silently corrupting state.
+MISSING_FUN(__arm_fadvise64_64)
+MISSING_FUN(__cxa_guard_abort)
+MISSING_FUN(__cxa_guard_acquire)
+MISSING_FUN(__cxa_guard_release)
+MISSING_FUN(__cxa_thread_finalize)
+MISSING_FUN(__fsetxattr)
+MISSING_FUN(__libc_stdio_cleanup)
+MISSING_FUN(_Z21__libc_shared_globalsv)
+MISSING_FUN(getentropy)
+MISSING_FUN(posix_spawn_file_actions_addchdir_np)
+MISSING_FUN(posix_spawn_file_actions_addclose)
+MISSING_FUN(posix_spawn_file_actions_adddup2)
+MISSING_FUN(posix_spawn_file_actions_addopen)
+MISSING_FUN(posix_spawn_file_actions_destroy)
+MISSING_FUN(posix_spawn_file_actions_init)
+MISSING_FUN(posix_spawnattr_destroy)
+MISSING_FUN(posix_spawnattr_init)
+MISSING_FUN(posix_spawnattr_setflags)
+MISSING_FUN(posix_spawnattr_setsigdefault)
+MISSING_FUN(statx)
 
 typedef void SymbolAddr;
 typedef char SymbolName;
