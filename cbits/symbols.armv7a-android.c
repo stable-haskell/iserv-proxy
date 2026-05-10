@@ -379,6 +379,7 @@ MISSING_FUN(posix_spawnattr_destroy)
 MISSING_FUN(posix_spawnattr_init)
 MISSING_FUN(posix_spawnattr_setflags)
 MISSING_FUN(posix_spawnattr_setsigdefault)
+MISSING_FUN(posix_spawnp)
 MISSING_FUN(statx)
 
 typedef void SymbolAddr;
