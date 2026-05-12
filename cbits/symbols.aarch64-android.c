@@ -131,6 +131,13 @@ MISSING_FUN(_ZSt9terminatev)
 // armv7a-android stubs added earlier.
 MISSING_FUN(__cxa_guard_acquire)
 MISSING_FUN(__cxa_guard_release)
+MISSING_FUN(__fadvise64)
+MISSING_FUN(__getpriority)
+MISSING_FUN(__ldtoa)
+MISSING_FUN(__sflush)
+MISSING_FUN(__vfprintf)
+MISSING_FUN(async_safe_fatal_no_abort)
+MISSING_FUN(async_safe_format_buffer)
 
 typedef void SymbolAddr;
 typedef char SymbolName;
