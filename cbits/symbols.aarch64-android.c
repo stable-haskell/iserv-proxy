@@ -121,6 +121,16 @@ MISSING_FUN(_ZSt9terminatev)
 //MISSING_FUN(_ZN10__cxxabiv119__getExceptionClassEPK17_Unwind_Exception)
 //MISSING_FUN(_ZSt11__terminatePFvvE)
 // MISSINF_FUN(__gxx_personality_v0)
+// Symbols absent from the aarch64 Android NDK's bionic / libc++
+// as shipped with our current toolchain.  The dynamic linker
+// would otherwise fail to load this library when it sees the
+// unresolved references via `SYM(...)` below.  These stubs are
+// never expected to be invoked at runtime; if a real call ever
+// lands here we `exit(1)` with a diagnostic so the caller is
+// visible instead of silently corrupting state.  Mirrors the
+// armv7a-android stubs added earlier.
+MISSING_FUN(__cxa_guard_acquire)
+MISSING_FUN(__cxa_guard_release)
 
 typedef void SymbolAddr;
 typedef char SymbolName;
