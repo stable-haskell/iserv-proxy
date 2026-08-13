@@ -1,7 +1,29 @@
 #include <string.h>
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #define MISSING_FUN(f) void (f)(void) { printf("Unknown call to `%s'\n", #f); exit(1); }
+
+/* mingw-w64 14.0.0 added an `_assert` member to `libmingwex.a` (13.0.0 had
+   none, so `_assert` came from the UCRT import library).  That member calls
+   the CRT's assert through `__imp___msvcrt_assert`, and wine's ucrtbase does
+   not export that alias by name -- `GetProcAddress` returns NULL for it, so
+   the whole archive fails to resolve and every unit that needs a symbol from
+   it (ghc-bignum, ...) fails to load.  Hand the linker the indirection
+   directly; same shape as GHC's Note [_iob_func symbol].
+
+   Do not point this at `_assert`: with libmingwex's member linked in that is
+   the caller, and it would recurse. */
+static void
+iserv_msvcrt_assert (const char *expr, const char *file, unsigned int line)
+{
+    fprintf (stderr, "Assertion failed: %s, file %s, line %u\n",
+             expr ? expr : "(null)", file ? file : "(null)", line);
+    abort ();
+}
+
+static const void *iserv_imp_msvcrt_assert = (const void *) &iserv_msvcrt_assert;
 
 typedef void SymbolAddr;
 typedef char SymbolName;
@@ -74,6 +96,17 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(tanf),
     SYM(tanh),
     SYM(tanhf),
+    /* POSIX-named CRT aliases.  wine's ucrtbase implements them but only
+       exports the underscore spellings (`_fileno`, `_stricmp`, `_strnicmp`),
+       so `GetProcAddress` cannot find these and any object referencing them
+       fails to load: `fileno` is needed by libmingwex's `_assert` member (see
+       above), `strncasecmp` by unix-time.  Taking their address here is fine:
+       the static link resolves it through mingw-w64's import library. */
+    SYM(fileno),
+    SYM(strcasecmp),
+    SYM(strncasecmp),
+    { "__imp___msvcrt_assert", (void*)&iserv_imp_msvcrt_assert,
+      STRENGTH_NORMAL, SYM_TYPE_INDIRECT_DATA },
     { 0, 0, STRENGTH_NORMAL, 1 } /* sentinel */
 };
 
