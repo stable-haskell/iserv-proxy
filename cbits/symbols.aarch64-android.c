@@ -107,6 +107,20 @@ extern void __cxa_guard_acquire(void);
 extern void __cxa_guard_release(void);
 extern void __strncpy_chk(void);
 
+// Character-set conversion.  `ghc-internal`'s GHC.Internal.IO.Encoding.Iconv
+// binds these to implement the locale text encoding, so every object file
+// loaded for a Template Haskell splice references them -- but the statically
+// linked interpreter never calls them itself, so without an entry here the
+// runtime linker cannot resolve them.  With --optimistic-linking (which
+// haskell.nix bakes in for GHC >= 9.14) the load then succeeds and the first
+// call segfaults instead of failing at load time.
+// bionic has had nl_langinfo since API 26 and iconv since API 28; the NDK we
+// build against targets API 35.
+extern void nl_langinfo(void);
+extern void iconv_open(void);
+extern void iconv(void);
+extern void iconv_close(void);
+
 #define MISSING_FUN(f) void (f)(void) { printf("Unknown call to `%s'\n", #f); exit(1); }
 
 MISSING_FUN(c_format_unix_time)
@@ -480,6 +494,10 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(fchmodat),
     SYM(fstatat),
     SYM(floor),
+    SYM(nl_langinfo),
+    SYM(iconv_open),
+    SYM(iconv),
+    SYM(iconv_close),
     { 0, 0, STRENGTH_NORMAL, 1 } /* sentinel */
 };
 
