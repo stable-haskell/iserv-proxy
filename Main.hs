@@ -26,7 +26,7 @@ somewhat clear:
  | GHC <--> proxy<+-----+>  iserv  |
  '----------------'  ^  '----------'
         ^            |
-        |            '-- communication via sockets
+        |            '-- communication via sockets or pipes
         '--- communication via pipes
 
 For now, we won't support multiple concurrent
@@ -61,6 +61,7 @@ import Text.Printf
 import GHC.Fingerprint (getFileHash)
 import System.Directory
 import System.FilePath (isAbsolute)
+import System.Process
 
 import Data.Binary
 import qualified Data.ByteString as BS
@@ -77,9 +78,16 @@ dieWithUsage = do
     die $ prog ++ ": " ++ msg
   where
 #if defined(WINDOWS)
-    msg = "usage: iserv <write-handle> <read-handle> <interpreter ip> <interpreter port> [-v]"
+    msg = "usage: iserv <write-handle> <read-handle> <interpreter ip> <interpreter port> [-v]\n"
+       ++ "       iserv <write-handle> <read-handle> --pipe <cmd> [args...] [-v]"
 #else
-    msg = "usage: iserv <write-fd> <read-fd> <interpreter ip> <interpreter port> [-v]"
+    msg = "usage: iserv <write-fd> <read-fd> <interpreter ip> <interpreter port> [-v]\n"
+       ++ "       iserv <write-fd> <read-fd> --pipe <cmd> [args...] [-v]"
+#endif
+
+#if !MIN_VERSION_ghci(9,7,0)
+readGhcHandle :: String -> IO Handle
+readGhcHandle = getGhcHandle . read
 #endif
 
 main :: IO ()
@@ -88,43 +96,108 @@ main = do
   hSetBuffering stdout LineBuffering
 
   args <- getArgs
-  (wfd1, rfd2, host_ip, port, rest) <-
-      case args of
-        arg0:arg1:arg2:arg3:rest -> do
-            let wfd1 = read arg0
-                rfd2 = read arg1
-                ip   = arg2
-                port = read arg3
-            return (wfd1, rfd2, ip, port, rest)
-        _ -> dieWithUsage
+  case args of
+    -- New --pipe mode: <ghc-write-fd> <ghc-read-fd> --pipe <cmd> [args...]
+    (arg0:arg1:"--pipe":cmdArgs) | not (null cmdArgs) -> do
+      outh <- readGhcHandle arg0
+      inh <- readGhcHandle arg1
 
-  verbose <- case rest of
-    ["-v"] -> return True
-    []     -> return False
-    _      -> dieWithUsage
+      -- Extract proxy flags that appear before the command
+      let verbose = "-v" `elem` cmdArgs
+          noLoadCall = "--no-load-call" `elem` cmdArgs
+
+      when verbose $
+        trace ("Spawning interpreter: " ++ unwords cmdArgs)
+
+      installSignalHandlers
+#if MIN_VERSION_ghci(9,13,0)
+      in_pipe <- mkPipeFromHandles inh outh
+#else
+      lo_ref <- newIORef Nothing
+      let in_pipe = Pipe{pipeRead = inh, pipeWrite = outh, pipeLeftovers = lo_ref}
+#endif
+
+      (out_pipe, ph) <- spawnInterpreter verbose cmdArgs
+
+      when verbose $
+        trace "Starting proxy"
+      E.finally
+        (proxy verbose noLoadCall in_pipe out_pipe)
+        (do when verbose $ trace "Terminating interpreter..."
+            terminateProcess ph
+            _ <- waitForProcess ph
+            return ())
+
+    -- Original TCP mode (backward compatible)
+    (arg0:arg1:arg2:arg3:rest) -> do
+      outh <- readGhcHandle arg0
+      inh <- readGhcHandle arg1
+      let ip   = arg2
+          port = read arg3
+
+      let verbose = "-v" `elem` rest
+          noLoadCall = "--no-load-call" `elem` rest
+
+      when (any (not . (`elem` ["-v", "--no-load-call"])) rest)
+        dieWithUsage
+
+      when verbose $
+        printf "GHC iserv starting (in: %s; out: %s)\n" (show inh) (show outh)
+      installSignalHandlers
+#if MIN_VERSION_ghci(9,13,0)
+      in_pipe <- mkPipeFromHandles inh outh
+#else
+      lo_ref <- newIORef Nothing
+      let in_pipe = Pipe{pipeRead = inh, pipeWrite = outh, pipeLeftovers = lo_ref}
+#endif
+
+      when verbose $
+        trace ("Trying to connect to " ++ ip ++ ":" ++ (show port))
+
+      out_pipe <- do
+        let go n = E.try (connectTo verbose ip port >>= socketToPipe) >>= \case
+              Left e | n == 0 -> E.throw (e :: E.SomeException)
+                     | n >  0 -> threadDelay 500000 >> go (n - 1)
+              Right a -> return a
+          in go 120 -- wait for up to 60seconds (polling every 0.5s).
+
+      when verbose $
+        trace "Starting proxy"
+      proxy verbose noLoadCall in_pipe out_pipe
+
+    _ -> dieWithUsage
+
+
+-- | Spawn the interpreter as a child process and create a Pipe
+-- from its stdin/stdout handles.
+spawnInterpreter :: Bool -> [String] -> IO (Pipe, ProcessHandle)
+spawnInterpreter verbose (cmd:args) = do
+  let cp = (proc cmd args)
+        { std_in  = CreatePipe
+        , std_out = CreatePipe
+        , std_err = Inherit
+        }
+  (Just hIn, Just hOut, _, ph) <- createProcess cp
 
   when verbose $
-    printf "GHC iserv starting (in: %d; out: %d)\n"
-      (fromIntegral rfd2 :: Int) (fromIntegral wfd1 :: Int)
-  inh  <- getGhcHandle rfd2
-  outh <- getGhcHandle wfd1
-  installSignalHandlers
+    trace "Interpreter process spawned"
+
+  hSetBuffering hIn NoBuffering
+  hSetBuffering hOut NoBuffering
+  hSetBinaryMode hIn True
+  hSetBinaryMode hOut True
+
+  -- hIn is the child's stdin (we write to it)
+  -- hOut is the child's stdout (we read from it)
+#if MIN_VERSION_ghci(9,13,0)
+  pipe <- mkPipeFromHandles hOut hIn
+#else
   lo_ref <- newIORef Nothing
-  let in_pipe = Pipe{pipeRead = inh, pipeWrite = outh, pipeLeftovers = lo_ref}
+  let pipe = Pipe{ pipeRead = hOut, pipeWrite = hIn, pipeLeftovers = lo_ref }
+#endif
+  return (pipe, ph)
+spawnInterpreter _ [] = die "iserv-proxy: --pipe requires a command"
 
-  when verbose $
-    trace ("Trying to connect to " ++ host_ip ++ ":" ++ (show port))
-
-  out_pipe <- do
-    let go n = E.try (connectTo verbose host_ip port >>= socketToPipe) >>= \case
-          Left e | n == 0 -> E.throw (e :: E.SomeException)
-                 | n >  0 -> threadDelay 500000 >> go (n - 1)
-          Right a -> return a
-      in go 120 -- wait for up to 60seconds (polling every 0.5s).
-
-  when verbose $
-    trace "Starting proxy"
-  proxy verbose in_pipe out_pipe
 
 -- | A hook, to transform outgoing (proxy -> interpreter)
 -- messages prior to sending them to the interpreter.
@@ -141,8 +214,16 @@ hook = return
 --
 fwdTHMsg :: (Binary a) => Pipe -> THMessage a -> IO a
 fwdTHMsg local msg = do
-  writePipe local (putTHMessage msg)
-  readPipe local get
+    writePipe local (putTHMessage (fixAddDep msg))
+    readPipe local get
+  where
+    fixAddDep (AddDependentFile fp) = AddDependentFile $ fixZ (map fixSlash fp)
+    fixAddDep m = m
+    fixZ ('Z':':':rest) = rest
+    fixZ ('/':'/':'?':'/':'Z':':':rest) = rest
+    fixZ fp = fp
+    fixSlash '\\' = '/'
+    fixSlash c = c
 
 -- | Fowarard a @Message@ call and handle @THMessages@.
 fwdTHCall :: (Binary a) => Bool -> Pipe -> Pipe -> Message a -> IO a
@@ -199,7 +280,7 @@ fwdLoadCall verbose _ remote msg = do
       writePipe remote (put m)
     loopLoad :: IO ()
     loopLoad = do
-      when verbose $ trace "fwdLoadCall: reading remote pipe"
+      when verbose $ trace "fwdLoadCall: X reading remote pipe"
       SomeProxyMessage msg' <- readPipe remote getProxyMessage
       when verbose $
         trace ("| Sl Msg:        proxy <- interpreter: " ++ show msg')
@@ -219,8 +300,8 @@ fwdLoadCall verbose _ remote msg = do
 
 -- | The actual proxy. Conntect local and remote pipe,
 -- and does some message handling.
-proxy :: Bool -> Pipe -> Pipe -> IO ()
-proxy verbose local remote = loop
+proxy :: Bool -> Bool -> Pipe -> Pipe -> IO ()
+proxy verbose noLoadCall local remote = loop
   where
     fwdCall :: (Binary a, Show a) => Message a -> IO a
     fwdCall msg = do
@@ -275,7 +356,7 @@ proxy verbose local remote = loop
         -- that are referenced in C:\ these are usually system libraries.
         LoadDLL path@('C':':':_) -> do
           fwdCall msg' >>= reply >> loop
-        LoadDLL path | isAbsolute path -> do
+        LoadDLL path | isAbsolute path && not noLoadCall -> do
           resp <- fwdLoadCall verbose local remote msg'
           reply resp
           loop
@@ -307,5 +388,9 @@ socketToPipe sock = do
   hdl <- socketToHandle sock ReadWriteMode
   hSetBuffering hdl NoBuffering
 
+#if MIN_VERSION_ghci(9,13,0)
+  mkPipeFromHandles hdl hdl
+#else
   lo_ref <- newIORef Nothing
   pure Pipe{ pipeRead = hdl, pipeWrite = hdl, pipeLeftovers = lo_ref }
+#endif
