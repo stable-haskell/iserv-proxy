@@ -61,7 +61,7 @@ import Text.Printf
 import GHC.Fingerprint (getFileHash)
 import System.Directory
 import System.FilePath (isAbsolute)
-import System.Process
+import InterpreterProcess (withInterpreter)
 
 import Data.Binary
 import qualified Data.ByteString as BS
@@ -117,16 +117,10 @@ main = do
       let in_pipe = Pipe{pipeRead = inh, pipeWrite = outh, pipeLeftovers = lo_ref}
 #endif
 
-      (out_pipe, ph) <- spawnInterpreter verbose cmdArgs
-
-      when verbose $
-        trace "Starting proxy"
-      E.finally
-        (proxy verbose noLoadCall in_pipe out_pipe)
-        (do when verbose $ trace "Terminating interpreter..."
-            terminateProcess ph
-            _ <- waitForProcess ph
-            return ())
+      withInterpreter cmdArgs $ \hIn hOut onShutdown -> do
+        out_pipe <- interpreterPipe hOut hIn
+        when verbose $ trace "Starting proxy"
+        proxy verbose noLoadCall onShutdown in_pipe out_pipe
 
     -- Original TCP mode (backward compatible)
     (arg0:arg1:arg2:arg3:rest) -> do
@@ -163,40 +157,21 @@ main = do
 
       when verbose $
         trace "Starting proxy"
-      proxy verbose noLoadCall in_pipe out_pipe
+      proxy verbose noLoadCall (pure ()) in_pipe out_pipe
 
     _ -> dieWithUsage
 
 
--- | Spawn the interpreter as a child process and create a Pipe
--- from its stdin/stdout handles.
-spawnInterpreter :: Bool -> [String] -> IO (Pipe, ProcessHandle)
-spawnInterpreter verbose (cmd:args) = do
-  let cp = (proc cmd args)
-        { std_in  = CreatePipe
-        , std_out = CreatePipe
-        , std_err = Inherit
-        }
-  (Just hIn, Just hOut, _, ph) <- createProcess cp
-
-  when verbose $
-    trace "Interpreter process spawned"
-
-  hSetBuffering hIn NoBuffering
-  hSetBuffering hOut NoBuffering
-  hSetBinaryMode hIn True
-  hSetBinaryMode hOut True
-
-  -- hIn is the child's stdin (we write to it)
-  -- hOut is the child's stdout (we read from it)
+-- | Turn the child's stdout/stdin handles into the interpreter pipe.
+interpreterPipe :: Handle -> Handle -> IO Pipe
+interpreterPipe hOut hIn = do
 #if MIN_VERSION_ghci(9,13,0)
   pipe <- mkPipeFromHandles hOut hIn
 #else
   lo_ref <- newIORef Nothing
   let pipe = Pipe{ pipeRead = hOut, pipeWrite = hIn, pipeLeftovers = lo_ref }
 #endif
-  return (pipe, ph)
-spawnInterpreter _ [] = die "iserv-proxy: --pipe requires a command"
+  return pipe
 
 
 -- | A hook, to transform outgoing (proxy -> interpreter)
@@ -300,8 +275,8 @@ fwdLoadCall verbose _ remote msg = do
 
 -- | The actual proxy. Conntect local and remote pipe,
 -- and does some message handling.
-proxy :: Bool -> Bool -> Pipe -> Pipe -> IO ()
-proxy verbose noLoadCall local remote = loop
+proxy :: Bool -> Bool -> IO () -> Pipe -> Pipe -> IO ()
+proxy verbose noLoadCall onShutdown local remote = loop
   where
     fwdCall :: (Binary a, Show a) => Message a -> IO a
     fwdCall msg = do
@@ -360,7 +335,7 @@ proxy verbose noLoadCall local remote = loop
           resp <- fwdLoadCall verbose local remote msg'
           reply resp
           loop
-        Shutdown{}    -> fwdCall msg' >> return ()
+        Shutdown{}    -> onShutdown >> fwdCall msg' >> return ()
         _other        -> fwdCall msg' >>= reply >> loop
 
 
