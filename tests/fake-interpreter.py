@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import resource
 import signal
+import struct
 import time
 
 
@@ -20,6 +21,15 @@ def record_process(directory, role):
 def wait_forever():
     while True:
         signal.pause()
+
+
+def read_exact(size):
+    data = bytearray()
+    while len(data) < size:
+        chunk = os.read(0, size - len(data))
+        assert chunk, "Unexpected end of LoadObj request"
+        data.extend(chunk)
+    return data
 
 
 def main():
@@ -35,7 +45,7 @@ def main():
     if scenario in {
         "close_stdout_ignore_term", "ghc_disconnect", "interrupt", "terminate",
         "terminate_during_shutdown", "interrupt_during_shutdown",
-        "late_terminate", "late_interrupt",
+        "late_terminate", "late_interrupt", "blocked_write",
     }:
         signal.signal(signal.SIGTERM, signal.SIG_IGN)
 
@@ -56,7 +66,14 @@ def main():
 
     while True:
         request = os.read(0, 1)
-        if request == b"\x0a":  # ResolveObjs returns a Binary Bool.
+        if request == b"\x06":  # LoadObj followed by a Binary String.
+            if scenario == "blocked_write":
+                (directory / "write-blocked").touch()
+                wait_forever()  # Keep stdin open with a pending proxy write.
+            size, = struct.unpack(">q", read_exact(8))
+            assert read_exact(size) == b"a" * size
+            os.write(1, b"\x02")  # Proxy Done, followed by a unit result.
+        elif request == b"\x0a":  # ResolveObjs returns a Binary Bool.
             if scenario == "exit_after_request":
                 os._exit(139)
             if scenario == "signal_after_request":

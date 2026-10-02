@@ -15,6 +15,7 @@ import os
 from pathlib import Path
 import select
 import signal
+import struct
 import subprocess
 import sys
 import tempfile
@@ -29,8 +30,9 @@ CASES = (
     "close_stdout_ignore_term", "ghc_disconnect", "interrupt", "terminate",
     "terminate_during_shutdown", "interrupt_during_shutdown",
     "late_terminate", "late_interrupt", "shutdown_failure", "fd_isolation",
+    "large_write", "blocked_write",
 )
-SUCCESS_CASES = {"normal", "slow_shutdown", "fd_isolation"}
+SUCCESS_CASES = {"normal", "slow_shutdown", "fd_isolation", "large_write"}
 NO_RESPONSE_CASES = {
     "exit_after_request", "signal_after_request", "exit_with_descendant",
     "close_stdout_ignore_term",
@@ -101,6 +103,19 @@ def drive_protocol(process, directory, read_local, write_local, scenario):
     wait_for_file(directory / "ready", process)
     if scenario in {"exit_idle", "success_idle"}:
         return
+
+    if scenario in {"large_write", "blocked_write"}:
+        # LoadObj encodes a Binary String; Done and its unit result need no
+        # GHC response. ResolveObjs below confirms that forwarding finished.
+        payload = b"a" * (1024 * 1024)
+        request = memoryview(b"\x06" + struct.pack(">q", len(payload)) + payload)
+        while request:
+            request = request[os.write(write_local, request):]
+        if scenario == "blocked_write":
+            wait_for_file(directory / "write-blocked", process)
+            time.sleep(0.2)
+            os.kill(process.pid, signal.SIGTERM)
+            return
 
     os.write(write_local, b"\x0a")
     if scenario in NO_RESPONSE_CASES:
@@ -190,7 +205,7 @@ def run_case(proxy, child_python, scenario):
         except (AssertionError, subprocess.TimeoutExpired) as error:
             cleanup_fixture(process, directory)
             stderr = (directory / "stderr").read_text(errors="replace")
-            raise AssertionError(f"{scenario}: {error}; stderr={stderr!r}") from error
+            raise AssertionError(f"{scenario}: {error}; stderr tail={stderr[-4000:]!r}") from error
         finally:
             cleanup_fixture(process, directory)
             os.close(read_local)

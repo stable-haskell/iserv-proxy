@@ -23,7 +23,8 @@ test: ## Test a built POSIX proxy (ISERV_PROXY, CHILD_PYTHON, TIMEOUT)
 	@test -x "$(ISERV_PROXY)" || { echo 'Build the proxy or set ISERV_PROXY to its executable.' >&2; exit 1; }
 	timeout -k 5 $(TIMEOUT) $(PYTHON) tests/lifecycle.py --proxy "$(ISERV_PROXY)" --child-python "$(CHILD_PYTHON)"
 
-verify: check build test ## Build and test the proxy
+verify: check build ## Build and test the proxy
+	$(MAKE) test
 
 ##@ Help
 help: ## Show targets and their parameters
