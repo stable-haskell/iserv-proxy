@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 """Test piped interpreter ownership without GHC or an emulator (POSIX only).
 
-The controller sends ResolveObjs and Shutdown directly. Each case has separate
-startup and cleanup deadlines, and kills its owned processes even on failure.
+The controller sends LoadObj, ResolveObjs, and Shutdown directly. Each case has
+separate startup and cleanup deadlines, and kills its owned processes even on failure.
 Use --child-python to run a native interpreter when the proxy runs under Rosetta.
 """
 
@@ -26,7 +26,8 @@ STARTUP_TIMEOUT = 30
 CLEANUP_TIMEOUT = 12
 CASES = (
     "normal", "slow_shutdown", "exit_idle", "success_idle",
-    "exit_after_request", "signal_after_request", "exit_with_descendant",
+    "exit_after_request", "success_after_request", "signal_after_request",
+    "exit_with_descendant",
     "close_stdout_ignore_term", "ghc_disconnect", "interrupt", "terminate",
     "terminate_during_shutdown", "interrupt_during_shutdown",
     "late_terminate", "late_interrupt", "shutdown_failure", "fd_isolation",
@@ -34,7 +35,8 @@ CASES = (
 )
 SUCCESS_CASES = {"normal", "slow_shutdown", "fd_isolation", "large_write"}
 NO_RESPONSE_CASES = {
-    "exit_after_request", "signal_after_request", "exit_with_descendant",
+    "exit_after_request", "success_after_request", "signal_after_request",
+    "exit_with_descendant",
     "close_stdout_ignore_term",
 }
 
@@ -155,6 +157,7 @@ def assert_result(process, directory, scenario, stderr, expected_fds):
         "exit_idle": "139", "exit_after_request": "139",
         "exit_with_descendant": "139", "signal_after_request": "-11",
         "success_idle": "ExitSuccess", "shutdown_failure": "23",
+        "success_after_request": "ExitSuccess",
     }.get(scenario)
     if expected_status is not None:
         assert expected_status in stderr, f"Lost interpreter status {expected_status}"

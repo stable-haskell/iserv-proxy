@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Copyright 2026 Moritz Angermann <moritz@zw3rk.com>, zw3rk pte. ltd.
 # SPDX-License-Identifier: BSD-3-Clause
-"""The two-message interpreter used by lifecycle.py."""
+"""The LoadObj, ResolveObjs, and Shutdown interpreter used by lifecycle.py."""
 
 import argparse
 import json
@@ -74,8 +74,8 @@ def main():
             assert read_exact(size) == b"a" * size
             os.write(1, b"\x02")  # Proxy Done, followed by a unit result.
         elif request == b"\x0a":  # ResolveObjs returns a Binary Bool.
-            if scenario == "exit_after_request":
-                os._exit(139)
+            if scenario in {"exit_after_request", "success_after_request"}:
+                os._exit(139 if scenario == "exit_after_request" else 0)
             if scenario == "signal_after_request":
                 resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
                 os.kill(os.getpid(), signal.SIGSEGV)

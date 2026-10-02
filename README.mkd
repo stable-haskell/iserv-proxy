@@ -11,8 +11,8 @@ See `local-example.sh` for a sense of how to use this.
 
 The proxy owns the interpreter started by `--pipe`. It allows five seconds
 for graceful Shutdown, reports unexpected child exits, and bounds cleanup
-when the interpreter ignores TERM. On POSIX it closes inherited descriptors. Failed
-protocol work, unexpected child exit, and cancellation terminate the
+when the interpreter ignores TERM. On POSIX it closes inherited descriptors.
+Failed protocol work, unexpected child exit, and cancellation terminate the
 interpreter's process group, including descendants. Successful Shutdown
 reaps the interpreter and closes its pipes.
 
@@ -27,8 +27,8 @@ make verify BUILD_DIR=dist-nonthreaded CABAL_FLAGS=--flags=-threaded
 The tests need Python 3, POSIX signals, and GNU coreutils `timeout`.
 They use a fake interpreter to check successful Shutdown, child failures,
 cancellation, blocked writes, inherited descriptors, and surviving
-processes. Each case has separate startup and
-cleanup deadlines; `TIMEOUT` bounds the whole build or test command.
+processes. Each case has separate startup and cleanup deadlines; `TIMEOUT`
+bounds the whole build or test command.
 
 To test an existing binary, run `make test ISERV_PROXY=/path/to/iserv-proxy`.
 Set `CHILD_PYTHON` to a native Python executable when the proxy runs through

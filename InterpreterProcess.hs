@@ -144,7 +144,7 @@ closePipes child = E.uninterruptibleMask_ $
     ignoreCloseError _ = pure ()
 
 reportExit :: Maybe ExitCode -> IO ()
-reportExit (Just code@(ExitFailure _)) =
+reportExit (Just code) =
   hPutStrLn stderr ("iserv-proxy: interpreter exit status: " ++ show code)
 reportExit _ = pure ()
 
