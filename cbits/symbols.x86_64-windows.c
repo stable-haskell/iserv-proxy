@@ -97,12 +97,14 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(tanh),
     SYM(tanhf),
     /* POSIX-named CRT aliases.  wine's ucrtbase implements them but only
-       exports the underscore spellings (`_fileno`, `_stricmp`, `_strnicmp`),
-       so `GetProcAddress` cannot find these and any object referencing them
-       fails to load: `fileno` is needed by libmingwex's `_assert` member (see
-       above), `strncasecmp` by unix-time.  Taking their address here is fine:
+       exports the underscore spellings (`_fileno`, `_stricmp`, `_strnicmp`,
+       `_strdup`), so `GetProcAddress` cannot find these and any object
+       referencing them fails to load: `fileno` is needed by libmingwex's
+       `_assert` member (see above), `strncasecmp` by unix-time, and `strdup`
+       by unix-time >= 0.5.1.  Taking their address here is fine:
        the static link resolves it through mingw-w64's import library. */
     SYM(fileno),
+    SYM(strdup),
     SYM(strcasecmp),
     SYM(strncasecmp),
     { "__imp___msvcrt_assert", (void*)&iserv_imp_msvcrt_assert,
