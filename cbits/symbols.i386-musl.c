@@ -52,7 +52,6 @@ extern void __multf3(void);
 extern void __subtf3(void);
 extern void __trunctfdf2(void);
 
-extern void __aio_close(void);
 extern void __stack_chk_fail_local(void);
 
 #define MISSING_FUN(f) void (f)(void) { printf("Unknown call to `%s'\n", #f); exit(1); }
@@ -285,7 +284,6 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(fma),
     SYM(fmaf),
     SYM(puts),
-    SYM(__aio_close),
     SYM(__stack_chk_fail_local),
     { 0, 0, STRENGTH_NORMAL, 1 } /* sentinel */
 };
