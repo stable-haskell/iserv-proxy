@@ -6,6 +6,14 @@
 #include <math.h>
 #include <errno.h>
 
+// Match GNU libiconv public prototypes without importing system headers
+// that conflict with the legacy untyped declarations below. iconv_t is void*.
+extern void *libiconv_open(const char *tocode, const char *fromcode);
+extern size_t libiconv(void *cd, char **inbuf, size_t *inbytesleft,
+                      char **outbuf, size_t *outbytesleft);
+extern int libiconv_close(void *cd);
+extern const char *locale_charset(void);
+
 extern void __aeabi_idiv(void);
 extern void __aeabi_idivmod(void);
 extern void __aeabi_memcpy(void);
@@ -394,6 +402,12 @@ typedef mode_t (*umask_func_ptr_t)(mode_t);
 
 RtsSymbolVal my_iserv_syms[] = {
     // { "__sync_val_compare_and_swap_1", (void*)(&___sync_val_compare_and_swap_1), STRENGTH_NORMAL, 1 },
+    // API 26 uses GNU libiconv. Static Bionic dlsym cannot expose these
+    // definitions to loaded Haskell objects; register their real addresses.
+    SYM(libiconv_open),
+    SYM(libiconv),
+    SYM(libiconv_close),
+    SYM(locale_charset),
     SYM(strlen),
     SYM(__aeabi_idiv),
     SYM(__aeabi_idivmod),
