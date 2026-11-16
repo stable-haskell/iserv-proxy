@@ -1,1 +1,4 @@
 dist-newstyle
+dist-threaded
+dist-nonthreaded
+__pycache__/
