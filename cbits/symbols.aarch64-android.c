@@ -8,6 +8,10 @@
 #include <assert.h>
 #include <math.h>
 #include <errno.h>
+#include <iconv.h>
+#ifdef _LIBICONV_VERSION
+#include <localcharset.h>
+#endif
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -114,12 +118,9 @@ extern void __strncpy_chk(void);
 // runtime linker cannot resolve them.  With --optimistic-linking (which
 // haskell.nix bakes in for GHC >= 9.14) the load then succeeds and the first
 // call segfaults instead of failing at load time.
-// bionic has had nl_langinfo since API 26 and iconv since API 28; the NDK we
-// build against targets API 35.
+// Bionic provides nl_langinfo from API 26 and iconv from API 28. The
+// selected iconv.h describes either Bionic or the declared GNU dependency.
 extern void nl_langinfo(void);
-extern void iconv_open(void);
-extern void iconv(void);
-extern void iconv_close(void);
 
 #define MISSING_FUN(f) void (f)(void) { printf("Unknown call to `%s'\n", #f); exit(1); }
 
@@ -171,8 +172,11 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(htonl),
     SYM(ntohl),
     // sys/random.h
+    // These public Bionic APIs are declared only from API level 28.
+#if __ANDROID_API__ >= 28
     SYM(getentropy),
     SYM(getrandom),
+#endif
     // sys/auxv.h
     SYM(getauxval),
     // sys/mman.h
@@ -495,9 +499,21 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(fstatat),
     SYM(floor),
     SYM(nl_langinfo),
+#ifdef _LIBICONV_VERSION
+    // Keep plain lookup names while the header maps their real addresses
+    // to GNU definitions, and expose the GNU names used by ghc-internal.
     SYM(iconv_open),
     SYM(iconv),
     SYM(iconv_close),
+    SYM(libiconv_open),
+    SYM(libiconv),
+    SYM(libiconv_close),
+    SYM(locale_charset),
+#elif __ANDROID_API__ >= 28
+    SYM(iconv_open),
+    SYM(iconv),
+    SYM(iconv_close),
+#endif
     { 0, 0, STRENGTH_NORMAL, 1 } /* sentinel */
 };
 
