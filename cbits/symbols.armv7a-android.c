@@ -409,6 +409,10 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(libiconv_close),
     SYM(locale_charset),
     SYM(strlen),
+#if __ANDROID_API__ < 28
+    // SplitMix uses this Bionic entropy API before getentropy is available.
+    SYM(arc4random_buf),
+#endif
     SYM(__aeabi_idiv),
     SYM(__aeabi_idivmod),
     SYM(__aeabi_memcpy),
