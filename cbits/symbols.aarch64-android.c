@@ -8,10 +8,6 @@
 #include <assert.h>
 #include <math.h>
 #include <errno.h>
-#include <iconv.h>
-#ifdef _LIBICONV_VERSION
-#include <localcharset.h>
-#endif
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -118,9 +114,23 @@ extern void __strncpy_chk(void);
 // runtime linker cannot resolve them.  With --optimistic-linking (which
 // haskell.nix bakes in for GHC >= 9.14) the load then succeeds and the first
 // call segfaults instead of failing at load time.
-// Bionic provides nl_langinfo from API 26 and iconv from API 28. The
-// selected iconv.h describes either Bionic or the declared GNU dependency.
+// Bionic provides nl_langinfo from API 26 and iconv from API 28.
 extern void nl_langinfo(void);
+#if __ANDROID_API__ >= 28
+extern void iconv_open(void);
+extern void iconv(void);
+extern void iconv_close(void);
+#endif
+// GHC's Android base links GNU libiconv (Bionic has no iconv before API 28),
+// whose header renames the API to libiconv_*. Declare those names here, as
+// the armv7a table does, rather than relying on whichever iconv.h this file
+// is compiled against: without libiconv's include dir that is Bionic's, and
+// the GNU names would silently go unregistered.
+extern void *libiconv_open(const char *tocode, const char *fromcode);
+extern size_t libiconv(void *cd, char **inbuf, size_t *inbytesleft,
+                      char **outbuf, size_t *outbytesleft);
+extern int libiconv_close(void *cd);
+extern const char *locale_charset(void);
 
 #define MISSING_FUN(f) void (f)(void) { printf("Unknown call to `%s'\n", #f); exit(1); }
 
@@ -499,17 +509,11 @@ RtsSymbolVal my_iserv_syms[] = {
     SYM(fstatat),
     SYM(floor),
     SYM(nl_langinfo),
-#ifdef _LIBICONV_VERSION
-    // Keep plain lookup names while the header maps their real addresses
-    // to GNU definitions, and expose the GNU names used by ghc-internal.
-    SYM(iconv_open),
-    SYM(iconv),
-    SYM(iconv_close),
     SYM(libiconv_open),
     SYM(libiconv),
     SYM(libiconv_close),
     SYM(locale_charset),
-#elif __ANDROID_API__ >= 28
+#if __ANDROID_API__ >= 28
     SYM(iconv_open),
     SYM(iconv),
     SYM(iconv_close),
